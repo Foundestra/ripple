@@ -1,0 +1,42 @@
+diff --git a/pb/demo.proto b/pb/demo.proto
+index aed0c2c..a59a419 100644
+--- a/pb/demo.proto
++++ b/pb/demo.proto
+@@ -191,7 +191,10 @@ message ChargeRequest {
+ }
+ 
+ message ChargeResponse {
+-    string transaction_id = 1;
++    reserved 1;
++    reserved "transaction_id";
++    string charge_id = 2;
++    string currency_code = 3;
+ }
+ 
+ // -------------Email service-----------------
+diff --git a/src/payment/charge.js b/src/payment/charge.js
+index 9bee638..c73f1da 100644
+--- a/src/payment/charge.js
++++ b/src/payment/charge.js
+@@ -58,7 +58,7 @@ module.exports.charge = async request => {
+     const currentMonth = new Date().getMonth() + 1;
+     const currentYear = new Date().getFullYear();
+     const lastFourDigits = number.substr(-4);
+-    const transactionId = uuidv4();
++    const chargeId = uuidv4();
+ 
+     const card = cardValidator(number);
+     const { card_type: cardType, valid } = card.getCardDetails();
+@@ -100,10 +100,10 @@ module.exports.charge = async request => {
+     }
+ 
+     const { units, nanos, currencyCode } = request.amount;
+-    logger.info({ transactionId, cardType, lastFourDigits, amount: { units, nanos, currencyCode }, loyalty_level }, 'Transaction complete.');
++    logger.info({ chargeId, cardType, lastFourDigits, amount: { units, nanos, currencyCode }, loyalty_level }, 'Transaction complete.');
+     transactionsCounter.add(1, { 'demo.payment.currency': currencyCode });
+ 
+-    return { transactionId };
++    return { chargeId, currencyCode };
+   } catch (err) {
+     span.recordException(err);
+     span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });

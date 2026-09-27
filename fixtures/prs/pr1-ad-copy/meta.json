@@ -1,0 +1,11 @@
+{
+  "id": "pr1",
+  "number": 101,
+  "title": "Spring sale ad copy (AD-31)",
+  "body": "Updates the ad text for binoculars, telescopes and the color imager to lead with the spring sale. Copy only.",
+  "branch": "ripple-demo/pr1-ad-copy",
+  "base": "main",
+  "author": "lucia-growth",
+  "ci": { "state": "success", "summary": "4/4 checks passed" },
+  "demo": { "expected": "low", "moment": "Comment lands in seconds; nothing to see is the point." }
+}

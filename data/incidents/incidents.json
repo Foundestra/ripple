@@ -1,0 +1,288 @@
+{
+  "description": "Seeded incident history and RCA learnings. Several are written from failures triggered on purpose with flagd in the OpenTelemetry Demo (see `origin`). Served by the seeded incident adapter.",
+  "incidents": [
+    {
+      "id": "INC-2031",
+      "title": "Checkout outage after ChargeResponse field change",
+      "severity": "SEV1",
+      "date": "2026-06-12",
+      "duration_min": 47,
+      "services": [
+        "payment",
+        "checkout",
+        "frontend"
+      ],
+      "tags": [
+        "contract",
+        "proto",
+        "breaking-change",
+        "ChargeResponse",
+        "transaction_id",
+        "payment"
+      ],
+      "origin": "experiment:paymentFailure",
+      "summary": "A payment release renamed a field on ChargeResponse. Checkout kept reading transaction_id, got an empty string, and failed order placement for every customer. Frontend surfaced the error on the checkout page.",
+      "rca": "The proto change was reviewed only by the payments team. Checkout is a hard dependency of payment and was not in the review. No contract check ran in CI, and checkout's generated code was not regenerated.",
+      "watch_for": [
+        "Removing, renaming or renumbering fields in ChargeResponse or ChargeRequest",
+        "Checkout reads ChargeResponse.transaction_id to confirm the order; it must be regenerated and deployed first",
+        "Run the checkout trace-based tests before merging any payment contract change"
+      ],
+      "checks": [
+        "Add a payment ↔ checkout contract test to CI (still-open RCA action item)"
+      ]
+    },
+    {
+      "id": "INC-1877",
+      "title": "Recommendations silently degraded for two days",
+      "severity": "SEV3",
+      "date": "2026-04-03",
+      "duration_min": 2880,
+      "services": [
+        "recommendation",
+        "frontend",
+        "product-catalog"
+      ],
+      "tags": [
+        "recommendation",
+        "fallback",
+        "silent-degradation",
+        "ListRecommendations",
+        "cache"
+      ],
+      "origin": "experiment:recommendationCacheFailure",
+      "summary": "A change to the recommendation list logic made ListRecommendations slow and memory hungry. Frontend's fallback hid the errors, so no alert fired and the carousel was empty for two days.",
+      "rca": "Frontend's graceful fallback turned a failure into missing UI. Nobody watched the recommendation error rate or response size; only a customer report caught it.",
+      "watch_for": [
+        "Changes to the size or ordering of ListRecommendationsResponse",
+        "Check the recommendation latency and error panels after deploy; frontend will not page",
+        "Confirm the product page still renders recommendations end to end"
+      ],
+      "checks": [
+        "Compare ListRecommendations response size and latency on staging before and after"
+      ]
+    },
+    {
+      "id": "INC-1954",
+      "title": "Cart lost for 12% of users after Valkey failover",
+      "severity": "SEV2",
+      "date": "2026-05-09",
+      "duration_min": 38,
+      "services": [
+        "cart",
+        "valkey-cart",
+        "frontend",
+        "checkout"
+      ],
+      "tags": [
+        "cart",
+        "valkey",
+        "redis",
+        "cache",
+        "data-loss"
+      ],
+      "origin": "experiment:cartFailure",
+      "summary": "Cart treated Valkey as a cache and returned empty carts on connection errors. Checkout then placed empty orders.",
+      "rca": "Valkey is the cart's system of record. The edge was classified as soft because it looked like a cache.",
+      "watch_for": [
+        "Error handling around Valkey calls in cart",
+        "Checkout behaviour when cart returns empty"
+      ],
+      "checks": [
+        "Kill Valkey on staging and confirm cart returns an error, not an empty cart"
+      ]
+    },
+    {
+      "id": "INC-1702",
+      "title": "Product pages 500 when product catalog returned errors",
+      "severity": "SEV2",
+      "date": "2026-02-14",
+      "duration_min": 22,
+      "services": [
+        "product-catalog",
+        "frontend",
+        "checkout",
+        "recommendation"
+      ],
+      "tags": [
+        "product-catalog",
+        "GetProduct",
+        "error-handling"
+      ],
+      "origin": "experiment:productCatalogFailure",
+      "summary": "GetProduct errors for one product id propagated as 500s on the product page and blocked checkout for carts containing that product.",
+      "rca": "Frontend and checkout both hard-depend on product-catalog; neither had a fallback for a single bad product.",
+      "watch_for": [
+        "Error paths in GetProduct",
+        "Checkout behaviour when a cart item is missing from the catalog"
+      ],
+      "checks": [
+        "Place an order containing a product that GetProduct fails for"
+      ]
+    },
+    {
+      "id": "INC-1990",
+      "title": "Orders stuck after Kafka consumer lag",
+      "severity": "SEV3",
+      "date": "2026-05-28",
+      "duration_min": 95,
+      "services": [
+        "kafka",
+        "accounting",
+        "fraud-detection",
+        "checkout"
+      ],
+      "tags": [
+        "kafka",
+        "queue",
+        "lag",
+        "accounting"
+      ],
+      "origin": "experiment:kafkaQueueProblems",
+      "summary": "Accounting and fraud detection fell 40 minutes behind. Checkout was unaffected because it only produces to Kafka.",
+      "rca": "Consumer lag was not alerted on. Checkout's soft edge to Kafka worked as designed.",
+      "watch_for": [
+        "Consumer throughput changes in accounting",
+        "Order event schema changes"
+      ],
+      "checks": [
+        "Check accounting consumer lag after deploy"
+      ]
+    },
+    {
+      "id": "INC-1811",
+      "title": "Payment unreachable after service address change",
+      "severity": "SEV1",
+      "date": "2026-03-19",
+      "duration_min": 18,
+      "services": [
+        "payment",
+        "checkout"
+      ],
+      "tags": [
+        "payment",
+        "config",
+        "PAYMENT_ADDR",
+        "unreachable"
+      ],
+      "origin": "experiment:paymentUnreachable",
+      "summary": "A config change pointed checkout at a stale payment address. Every order failed with UNAVAILABLE.",
+      "rca": "No synthetic checkout ran after the deploy. Checkout has no retry on payment UNAVAILABLE.",
+      "watch_for": [
+        "Payment address or port changes",
+        "Run a synthetic checkout after deploying payment"
+      ],
+      "checks": [
+        "Run a synthetic checkout right after deploying payment"
+      ]
+    },
+    {
+      "id": "INC-1633",
+      "title": "Ad service CPU spike slowed product pages",
+      "severity": "SEV4",
+      "date": "2026-01-22",
+      "duration_min": 31,
+      "services": [
+        "ad"
+      ],
+      "tags": [
+        "ad",
+        "cpu",
+        "gc",
+        "performance"
+      ],
+      "origin": "experiment:adHighCpu",
+      "summary": "A targeting change caused high CPU in the ad service. Ad calls timed out; frontend dropped the ad slot and pages stayed up.",
+      "rca": "Frontend's soft edge to ad held. Impact was limited to missing ads.",
+      "watch_for": [
+        "Ad targeting logic changes",
+        "Ad service CPU after deploy"
+      ],
+      "checks": [
+        "Watch ad service CPU for 15 minutes after deploy"
+      ]
+    },
+    {
+      "id": "INC-1745",
+      "title": "Wrong shipping cost after quote rounding change",
+      "severity": "SEV3",
+      "date": "2026-03-02",
+      "duration_min": 240,
+      "services": [
+        "quote",
+        "shipping",
+        "checkout"
+      ],
+      "tags": [
+        "quote",
+        "shipping",
+        "rounding",
+        "money"
+      ],
+      "origin": "postmortem",
+      "summary": "Quote returned costs in cents instead of dollars for four hours; checkout charged the wrong shipping amount.",
+      "rca": "The units change was not visible in the API contract. No end-to-end order check compared totals.",
+      "watch_for": [
+        "Units and rounding in quote responses",
+        "Checkout order totals in trace tests"
+      ],
+      "checks": [
+        "Compare checkout order totals against quote in an end-to-end test"
+      ]
+    },
+    {
+      "id": "INC-1920",
+      "title": "Confirmation emails not sent after template refactor",
+      "severity": "SEV4",
+      "date": "2026-05-15",
+      "duration_min": 600,
+      "services": [
+        "email",
+        "checkout"
+      ],
+      "tags": [
+        "email",
+        "template",
+        "memory-leak"
+      ],
+      "origin": "experiment:emailMemoryLeak",
+      "summary": "Email service leaked memory after a template refactor and restarted in a loop. Checkout logged the failures and orders still completed.",
+      "rca": "Checkout's soft edge to email held. Nobody watched the email error rate.",
+      "watch_for": [
+        "Email template rendering changes",
+        "Email service memory after deploy"
+      ],
+      "checks": [
+        "Send a test order and confirm the email arrives"
+      ]
+    },
+    {
+      "id": "INC-2102",
+      "title": "Currency conversion returned stale rates",
+      "severity": "SEV3",
+      "date": "2026-07-30",
+      "duration_min": 180,
+      "services": [
+        "currency",
+        "frontend",
+        "checkout"
+      ],
+      "tags": [
+        "currency",
+        "Convert",
+        "rates",
+        "money"
+      ],
+      "origin": "postmortem",
+      "summary": "A caching change in currency served day-old conversion rates. Checkout charged totals that differed from the displayed price.",
+      "rca": "Frontend and checkout call Convert independently; no check compared their results.",
+      "watch_for": [
+        "Caching around Convert",
+        "Displayed vs charged totals"
+      ],
+      "checks": [
+        "Compare displayed and charged totals for a non-USD order"
+      ]
+    }
+  ]
+}

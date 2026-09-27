@@ -1,0 +1,40 @@
+# Ripple + Postgres. Joins the OpenTelemetry Demo's docker network so it can
+# reach Prometheus and Jaeger by name. Start the demo first (`make start` in
+# opentelemetry-demo), then: docker compose up --build
+#
+# Without the demo running, Ripple falls back to the seeded graph snapshot.
+
+services:
+  ripple:
+    build: .
+    ports:
+      - "4000:4000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PROMETHEUS_URL: http://prometheus:9090
+      JAEGER_URL: http://jaeger:16686/jaeger/ui
+      RIPPLE_GRAPH_STORE: postgres
+      DATABASE_URL: postgres://ripple:ripple@postgres:5432/ripple
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [default, otel]
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ripple
+      POSTGRES_PASSWORD: ripple
+      POSTGRES_DB: ripple
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ripple"]
+      interval: 3s
+      retries: 20
+    networks: [default]
+
+networks:
+  otel:
+    name: opentelemetry-demo
+    external: true

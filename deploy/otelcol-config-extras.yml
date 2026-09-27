@@ -1,0 +1,34 @@
+# Ripple overlay for the OpenTelemetry Demo collector.
+#
+# Copy over src/otel-collector/otelcol-config-extras.yml in your opentelemetry-demo
+# checkout (it's the fork customization seam, loaded last), then `make start`.
+#
+# Adds the `servicegraph` connector, which turns traces into caller -> callee
+# edge metrics (traces_service_graph_request_total / _failed_total) and ships
+# them to Prometheus. Ripple reads those to build the dependency graph.
+#
+# The collector REPLACES arrays when merging config files, so the pipelines
+# below repeat the upstream receivers/exporters (as of demo commit 6a89fab,
+# compose.observability.yaml + compose.full.yaml layering). If your demo version
+# lists different ones, copy them from otelcol-config-full.yml and
+# otelcol-config-observability.yml and append `servicegraph`.
+
+connectors:
+  servicegraph:
+    latency_histogram_buckets: [10ms, 50ms, 100ms, 250ms, 1s, 5s]
+    dimensions: []
+    store:
+      ttl: 5s
+      max_items: 5000
+    # Name virtual nodes (Kafka, Valkey, Postgres) from span attributes when the
+    # callee isn't instrumented.
+    virtual_node_peer_attributes: [peer.service, db.system.name, db.system, messaging.system, server.address]
+    metrics_flush_interval: 15s
+
+service:
+  pipelines:
+    traces:
+      exporters: [debug, otlp_grpc/jaeger, span_metrics, servicegraph]
+    metrics:
+      receivers: [docker_stats, http_check/frontend-proxy, host_metrics, nginx, otlp, redis, postgresql, span_metrics, kafkametrics, servicegraph]
+      exporters: [debug, otlp_http/prometheus]

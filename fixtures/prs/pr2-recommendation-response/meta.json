@@ -1,0 +1,11 @@
+{
+  "id": "pr2",
+  "number": 102,
+  "title": "Return up to 10 stable recommendations (REC-88)",
+  "body": "ListRecommendations now returns up to 10 products (configurable via RECOMMENDATION_MAX_RESPONSES) in a deterministic order instead of a random sample of 5.",
+  "branch": "ripple-demo/pr2-recommendation-response",
+  "base": "main",
+  "author": "nadia-discovery",
+  "ci": { "state": "success", "summary": "5/5 checks passed" },
+  "demo": { "expected": "medium", "moment": "Frontend calls it but has a fallback, so Ripple warns instead of blocking." }
+}

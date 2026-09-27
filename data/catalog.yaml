@@ -1,0 +1,216 @@
+# Ripple service catalog (seeded).
+#
+# Tiers, owners and contract ownership for the OpenTelemetry Demo (Astronomy Shop).
+# In production this comes from Backstage / an internal catalog; here it is
+# hand-written and loaded by the YAML catalog adapter.
+#
+#   tier 1 = revenue path, pages someone at 3am
+#   tier 2 = important, degrades the experience
+#   tier 3 = nice to have
+#
+# kind: service | cache | queue | database | proxy | synthetic
+#   cache and queue callees start as SOFT edges, synchronous service calls start as HARD.
+
+services:
+  frontend-proxy:
+    tier: 1
+    kind: proxy
+    team: "@astro-shop/edge"
+    owners: [mara-edge]
+    paths: [src/frontend-proxy/]
+    description: Envoy ingress in front of the storefront
+
+  frontend:
+    tier: 1
+    kind: service
+    team: "@astro-shop/storefront"
+    owners: [jonas-web, aiko-web]
+    paths: [src/frontend/]
+    api_symbols: [pages/api]
+    description: Next.js storefront and BFF
+
+  checkout:
+    tier: 1
+    kind: service
+    team: "@astro-shop/checkout"
+    owners: [devi-checkout, sam-checkout]
+    paths: [src/checkout/]
+    contracts: [CheckoutService, PlaceOrderRequest, PlaceOrderResponse, OrderResult]
+    api_symbols: [PlaceOrder, chargeCard]
+    description: Orchestrates order placement (cart, payment, shipping, email)
+
+  payment:
+    tier: 1
+    kind: service
+    team: "@astro-shop/payments"
+    owners: [priya-payments, leo-payments]
+    paths: [src/payment/]
+    contracts: [PaymentService, ChargeRequest, ChargeResponse, CreditCardInfo]
+    api_symbols: [charge, Charge, module.exports.charge]
+    description: Charges credit cards; returns a transaction id to checkout
+
+  cart:
+    tier: 1
+    kind: service
+    team: "@astro-shop/cart"
+    owners: [tomas-cart]
+    paths: [src/cart/]
+    contracts: [CartService, CartItem, AddItemRequest, EmptyCartRequest, GetCartRequest, Cart]
+    api_symbols: [AddItem, GetCart, EmptyCart]
+    description: Shopping cart, backed by Valkey
+
+  valkey-cart:
+    tier: 1
+    kind: cache
+    team: "@astro-shop/cart"
+    owners: [tomas-cart]
+    paths: [src/valkey-cart/]
+    description: Valkey instance holding carts
+
+  product-catalog:
+    tier: 2
+    kind: service
+    team: "@astro-shop/catalog"
+    owners: [ines-catalog]
+    paths: [src/product-catalog/]
+    contracts: [ProductCatalogService, Product, ListProductsResponse, GetProductRequest, SearchProductsRequest, SearchProductsResponse]
+    api_symbols: [ListProducts, GetProduct, SearchProducts]
+    description: Product data used by storefront, checkout and recommendations
+
+  currency:
+    tier: 2
+    kind: service
+    team: "@astro-shop/payments"
+    owners: [leo-payments]
+    paths: [src/currency/]
+    contracts: [CurrencyService, Money, GetSupportedCurrenciesResponse, CurrencyConversionRequest]
+    api_symbols: [Convert, GetSupportedCurrencies]
+    description: Currency conversion
+
+  shipping:
+    tier: 2
+    kind: service
+    team: "@astro-shop/fulfilment"
+    owners: [kwame-fulfil]
+    paths: [src/shipping/]
+    contracts: [ShippingService, GetQuoteRequest, GetQuoteResponse, ShipOrderRequest, ShipOrderResponse, Address]
+    api_symbols: [get_quote, ship_order]
+    description: Shipping quotes and tracking ids
+
+  quote:
+    tier: 3
+    kind: service
+    team: "@astro-shop/fulfilment"
+    owners: [kwame-fulfil]
+    paths: [src/quote/]
+    description: Calculates shipping cost
+
+  recommendation:
+    tier: 2
+    kind: service
+    team: "@astro-shop/discovery"
+    owners: [nadia-discovery, ravi-discovery]
+    paths: [src/recommendation/]
+    contracts: [RecommendationService, ListRecommendationsRequest, ListRecommendationsResponse]
+    api_symbols: [ListRecommendations, get_product_list]
+    description: Product recommendations ("you may also like")
+
+  ad:
+    tier: 3
+    kind: service
+    team: "@astro-shop/growth"
+    owners: [lucia-growth]
+    paths: [src/ad/]
+    contracts: [AdService, AdRequest, AdResponse, Ad]
+    api_symbols: [getAds]
+    description: Contextual ads on product pages
+
+  email:
+    tier: 3
+    kind: service
+    team: "@astro-shop/fulfilment"
+    owners: [kwame-fulfil]
+    paths: [src/email/]
+    contracts: [EmailService, SendOrderConfirmationRequest, OrderItem]
+    api_symbols: [send_order_confirmation]
+    description: Order confirmation emails
+
+  kafka:
+    tier: 2
+    kind: queue
+    team: "@astro-shop/platform"
+    owners: [oli-platform]
+    paths: [src/kafka/]
+    description: Order events topic
+
+  accounting:
+    tier: 2
+    kind: service
+    team: "@astro-shop/finance-eng"
+    owners: [hana-finance]
+    paths: [src/accounting/]
+    inbound: async   # only reached via Kafka; edges into it are messaging
+    description: Consumes order events and books them
+
+  fraud-detection:
+    tier: 2
+    kind: service
+    team: "@astro-shop/risk"
+    owners: [pavel-risk]
+    paths: [src/fraud-detection/]
+    inbound: async
+    description: Consumes order events and scores fraud
+
+  postgresql:
+    tier: 2
+    kind: database
+    team: "@astro-shop/platform"
+    owners: [oli-platform]
+    paths: [src/postgresql/]
+    description: Accounting ledger store
+
+  load-generator:
+    tier: 3
+    kind: synthetic
+    team: "@astro-shop/platform"
+    owners: [oli-platform]
+    paths: [src/load-generator/]
+    description: Locust traffic; excluded from blast radius
+
+# Files that define contracts for many services. Changes are attributed to the
+# service that owns the touched message/service definition (see `contracts`).
+shared_contract_files:
+  - pb/demo.proto
+
+# Generated code: ignored for diff-size scoring.
+generated_paths:
+  - genproto/
+  - _pb2.py
+  - _pb2_grpc.py
+  - .pb.go
+
+# Owner assertions. These win over trace-derived classification in both directions.
+edge_overrides:
+  - from: cart
+    to: valkey-cart
+    kind: hard
+    reason: "Valkey is the cart's system of record, not a cache (owner: @astro-shop/cart)"
+  - from: frontend
+    to: recommendation
+    kind: soft
+    reason: "Frontend renders the product page without recommendations on error (owner: @astro-shop/storefront)"
+  - from: frontend
+    to: ad
+    kind: soft
+    reason: "Ad slot is optional; frontend swallows ad errors (owner: @astro-shop/storefront)"
+  - from: checkout
+    to: email
+    kind: soft
+    reason: "Checkout logs and continues if the confirmation email fails (owner: @astro-shop/checkout)"
+
+# Edges asserted manually for things traces can't see (uninstrumented or no traffic yet).
+manual_edges:
+  - from: accounting
+    to: postgresql
+    protocol: sql
+    reason: "Asserted by @astro-shop/finance-eng; ledger writes are not traced in all environments"

@@ -1,0 +1,11 @@
+{
+  "id": "pr3",
+  "number": 103,
+  "title": "PAY-142: currency code on charge response",
+  "body": "Adds currency_code to ChargeResponse for refund reporting. While here, renames transaction_id to charge_id for consistency with the ledger.",
+  "branch": "ripple-demo/pr3-payment-contract",
+  "base": "main",
+  "author": "priya-payments",
+  "ci": { "state": "success", "summary": "5/5 checks passed" },
+  "demo": { "expected": "high", "moment": "Checkout depends on it via a hard edge, a past incident matches, and the diff doesn't match its Jira ticket." }
+}

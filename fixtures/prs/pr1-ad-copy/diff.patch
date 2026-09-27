@@ -1,0 +1,25 @@
+diff --git a/src/ad/src/main/java/oteldemo/AdService.java b/src/ad/src/main/java/oteldemo/AdService.java
+index 67924e4..0d7e288 100644
+--- a/src/ad/src/main/java/oteldemo/AdService.java
++++ b/src/ad/src/main/java/oteldemo/AdService.java
+@@ -309,17 +309,17 @@ public final class AdService {
+     Ad binoculars =
+         Ad.newBuilder()
+             .setRedirectUrl("/product/2ZYFJ3GM2N")
+-            .setText("Roof Binoculars for sale. 50% off.")
++            .setText("Spring sale: Roof Binoculars, now 50% off.")
+             .build();
+     Ad explorerTelescope =
+         Ad.newBuilder()
+             .setRedirectUrl("/product/66VCHSJNUP")
+-            .setText("Starsense Explorer Refractor Telescope for sale. 20% off.")
++            .setText("Spring sale: Starsense Explorer Refractor Telescope, now 20% off.")
+             .build();
+     Ad colorImager =
+         Ad.newBuilder()
+             .setRedirectUrl("/product/0PUK6V6EV0")
+-            .setText("Solar System Color Imager for sale. 30% off.")
++            .setText("Spring sale: Solar System Color Imager, now 30% off.")
+             .build();
+     Ad opticalTube =
+         Ad.newBuilder()

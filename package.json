@@ -1,0 +1,29 @@
+{
+  "name": "ripple",
+  "version": "0.1.0",
+  "description": "Ripple: a PR review orchestrator that tells you what a change can break before it merges.",
+  "type": "module",
+  "private": true,
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "ripple": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "demo": "RIPPLE_GRAPH_SOURCE=seeded node src/server.js",
+    "analyze": "node src/cli.js analyze",
+    "experiment": "node src/cli.js experiment",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "marked": "^15.0.12",
+    "yaml": "^2.8.1"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
+  }
+}

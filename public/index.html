@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ripple</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#hero" aria-label="Ripple home">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><circle cx="16" cy="16" r="3.5" fill="currentColor"/><circle cx="16" cy="16" r="8.5" fill="none" stroke="currentColor" stroke-width="2" opacity=".6"/><circle cx="16" cy="16" r="13.5" fill="none" stroke="currentColor" stroke-width="2" opacity=".3"/></svg>
+      Ripple
+    </a>
+    <nav class="steps" id="steps" aria-label="Sections"></nav>
+    <div class="top-right">
+      <span class="chip" id="graphChip" title="Dependency graph source">graph: …</span>
+      <button class="icon-btn" id="themeBtn" title="Toggle light/dark (T)" aria-label="Toggle theme"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor"/></svg></button>
+    </div>
+  </header>
+
+  <main id="deck">
+    <!-- 0:00 Title -->
+    <section class="slide hero" id="hero" data-step="Title">
+      <div class="hero-inner">
+        <p class="eyebrow">PR review orchestrator</p>
+        <h1>Ripple</h1>
+        <p class="lede">Tells you what a change can break <em>before</em> it merges, not after it pages someone.</p>
+        <blockquote>"Most outages start as a PR someone approved. The reviewer just couldn't see what it touched."</blockquote>
+        <div class="hero-stats" id="heroStats"></div>
+        <p class="hint">Press <kbd>→</kbd> or <kbd>Space</kbd> to advance · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> open the demo PRs</p>
+      </div>
+    </section>
+
+    <!-- 0:30 Live dependency graph -->
+    <section class="slide" id="graph" data-step="Dependency map">
+      <div class="slide-head">
+        <div>
+          <p class="eyebrow">Code signal · built from OpenTelemetry traces</p>
+          <h2>This map isn't drawn by hand.</h2>
+          <p class="sub" id="graphSub">It's rebuilt from real traffic across the Astronomy Shop's services.</p>
+        </div>
+        <div class="legend" id="graphLegend">
+          <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="lg-hard"/></svg> hard edge: failure propagates</span>
+          <span><svg width="34" height="10"><line x1="2" y1="5" x2="32" y2="5" class="lg-soft"/></svg> soft edge: caller degrades</span>
+          <span><span class="flask">✓</span> verified by failure experiment</span>
+          <span class="tier-key"><i class="t1"></i>tier 1 <i class="t2"></i>tier 2 <i class="t3"></i>tier 3</span>
+        </div>
+      </div>
+      <div class="graph-wrap">
+        <svg id="graphSvg" role="img" aria-label="Service dependency graph"></svg>
+        <aside class="graph-panel" id="graphPanel">
+          <p class="muted">Click a service to see its blast radius: everything upstream that breaks or degrades if it fails.</p>
+        </aside>
+      </div>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </section>
+
+    <!-- 1:00 Failure experiment -->
+    <section class="slide" id="experiment" data-step="Failure experiment">
+      <div class="slide-head">
+        <div>
+          <p class="eyebrow">How edges become hard · flagd failure injection</p>
+          <h2>We broke it on purpose.</h2>
+          <p class="sub">Inject a downstream failure. If upstream errors spike with it, the edge is hard. If they stay flat, it's soft.</p>
+        </div>
+        <div class="seg" id="expTabs" role="tablist"></div>
+      </div>
+      <div class="exp-grid">
+        <figure class="chart-card">
+          <figcaption>
+            <span id="expTitle">Error rate during experiment</span>
+            <button class="btn ghost" id="replayBtn">▶ Replay</button>
+          </figcaption>
+          <div class="chart-legend" id="expLegend"></div>
+          <svg id="expChart" role="img" aria-label="Error rate over time"></svg>
+          <p class="note" id="expNote"></p>
+        </figure>
+        <div class="verdicts" id="expVerdicts"></div>
+      </div>
+    </section>
+
+    <!-- 1:40 – 4:10 PR theater -->
+    <section class="slide" id="prs" data-step="Three PRs">
+      <div class="theater">
+        <div class="theater-left">
+          <p class="eyebrow">Three real PRs on the OpenTelemetry Demo</p>
+          <div class="pr-cards" id="prCards"></div>
+          <div class="pipeline" id="pipeline" aria-live="polite">
+            <div class="pl-row">
+              <div class="pl-label">Signals <small>fetched in parallel</small></div>
+              <div class="pl-nodes">
+                <div class="pl-node" data-sig="planning"><b>Planning</b><small>Jira ticket</small><span class="ms"></span></div>
+                <div class="pl-node" data-sig="code"><b>Code</b><small>tier · N-hop graph</small><span class="ms"></span></div>
+                <div class="pl-node" data-sig="build"><b>Build</b><small>change risk · incidents</small><span class="ms"></span></div>
+              </div>
+            </div>
+            <div class="pl-row">
+              <div class="pl-label">Risk gate</div>
+              <div class="pl-nodes"><div class="pl-node gate" id="plGate"><b>Gate</b><small>low · medium · high</small><span class="ms"></span></div></div>
+            </div>
+            <div class="pl-row">
+              <div class="pl-label">Agents <small>only the ones this PR needs</small></div>
+              <div class="pl-nodes agents" id="plAgents"></div>
+            </div>
+          </div>
+          <div class="feed" id="feed" hidden>
+            <p class="eyebrow">Live from GitHub</p>
+            <ul id="feedList"></ul>
+          </div>
+        </div>
+        <div class="theater-right">
+          <div class="gh-comment" id="comment">
+            <div class="gh-head">
+              <span class="avatar" aria-hidden="true">R</span>
+              <b>ripple</b><span class="bot">bot</span><span class="muted" id="commentMeta">commented</span>
+            </div>
+            <div class="gh-body markdown" id="commentBody">
+              <div class="empty">
+                <p>Open a PR to see Ripple's comment land.</p>
+                <p class="muted">Press <kbd>1</kbd>, <kbd>2</kbd> or <kbd>3</kbd>.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4:10 Live vs seeded -->
+    <section class="slide" id="honesty" data-step="Live vs seeded">
+      <div class="slide-head">
+        <div>
+          <p class="eyebrow">What's real</p>
+          <h2>Graph and failures are real. Jira and incidents are seeded behind swappable adapters.</h2>
+          <p class="sub">Every seeded source has the same interface as its real integration, so swapping one in is a config change, not a rewrite.</p>
+        </div>
+      </div>
+      <table class="status-table" id="statusTable">
+        <thead><tr><th>Signal</th><th>Status</th><th>Source right now</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- 4:40 Close -->
+    <section class="slide hero close" id="close" data-step="Close">
+      <div class="hero-inner">
+        <p class="eyebrow">Existing AI reviewers read the diff. Ripple reads the system the diff lands in.</p>
+        <h1 class="closing">Ripple gives every PR the judgment of your most senior engineer.</h1>
+        <div class="compare">
+          <div><h3>Typical AI reviewer</h3><ul><li>Sees the diff and nearby files</li><li>No blast radius</li><li>Same effort for every PR</li><li>Doesn't learn from outages</li><li>Whoever the author picks reviews</li></ul></div>
+          <div class="ours"><h3>Ripple</h3><ul><li>Diff + runtime dependency graph + incident history</li><li>N-hop chain from real traces, hard edges flagged</li><li>Scaled to risk: low-risk PRs stay fast</li><li>Past RCAs recalled on similar changes</li><li>Owners of the services that could break</li></ul></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="diffDialog">
+    <form method="dialog" class="dlg-head"><b id="diffTitle"></b><button class="icon-btn" aria-label="Close">✕</button></form>
+    <pre id="diffBody" class="diff"></pre>
+  </dialog>
+
+  <script src="/vendor/marked.js"></script>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

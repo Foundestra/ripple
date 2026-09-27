@@ -1,0 +1,38 @@
+diff --git a/src/recommendation/recommendation_server.py b/src/recommendation/recommendation_server.py
+index 98594e7..aa32325 100644
+--- a/src/recommendation/recommendation_server.py
++++ b/src/recommendation/recommendation_server.py
+@@ -46,9 +46,9 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
+         span.set_attribute("demo.product.recommended.count", len(prod_list))
+         logger.info(f"Receive ListRecommendations for product ids:{prod_list}")
+ 
+-        # build and return response
++        # build and return response, best matches first
+         response = demo_pb2.ListRecommendationsResponse()
+-        response.product_ids.extend(prod_list)
++        response.product_ids.extend(sorted(prod_list))
+ 
+         # Collect metrics for this service
+         rec_svc_metrics["demo.recommendation.requests"].add(len(prod_list), {'recommendation.type': 'catalog'})
+@@ -68,7 +68,7 @@ def get_product_list(request_product_ids):
+     global first_run
+     global cached_ids
+     with tracer.start_as_current_span("get_product_list") as span:
+-        max_responses = 5
++        max_responses = int(os.environ.get('RECOMMENDATION_MAX_RESPONSES', 10))
+ 
+         # Formulate the list of characters to list of strings
+         request_product_ids_str = ''.join(request_product_ids)
+@@ -103,10 +103,8 @@ def get_product_list(request_product_ids):
+         span.set_attribute("demo.product.filtered.count", num_products)
+         num_return = min(max_responses, num_products)
+ 
+-        # Sample list of indices to return
+-        indices = random.sample(range(num_products), num_return)
+-        # Fetch product ids from indices
+-        prod_list = [filtered_products[i] for i in indices]
++        # Return a stable, deterministic slice instead of a random sample
++        prod_list = sorted(filtered_products)[:num_return]
+ 
+         span.set_attribute("demo.product.filtered.list", prod_list)
+ 

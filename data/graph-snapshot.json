@@ -1,0 +1,27 @@
+{
+  "description": "Offline fallback for the dependency graph, used when neither Prometheus (servicegraph connector) nor Jaeger is reachable. Edge set mirrors the OpenTelemetry Demo call graph; rates are representative of the default load generator. Replace by running `ripple graph snapshot` against a live stack.",
+  "captured_at": "2026-09-26T18:00:00Z",
+  "edges": [
+    { "from": "load-generator", "to": "frontend-proxy", "protocol": "http", "calls_per_min": 1180, "error_rate": 0.002 },
+    { "from": "frontend-proxy", "to": "frontend", "protocol": "http", "calls_per_min": 1165, "error_rate": 0.002 },
+    { "from": "frontend", "to": "ad", "protocol": "grpc", "calls_per_min": 212, "error_rate": 0.0 },
+    { "from": "frontend", "to": "cart", "protocol": "grpc", "calls_per_min": 318, "error_rate": 0.001 },
+    { "from": "frontend", "to": "checkout", "protocol": "grpc", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "frontend", "to": "currency", "protocol": "grpc", "calls_per_min": 402, "error_rate": 0.0 },
+    { "from": "frontend", "to": "product-catalog", "protocol": "grpc", "calls_per_min": 655, "error_rate": 0.0 },
+    { "from": "frontend", "to": "recommendation", "protocol": "grpc", "calls_per_min": 208, "error_rate": 0.0 },
+    { "from": "frontend", "to": "shipping", "protocol": "http", "calls_per_min": 96, "error_rate": 0.0 },
+    { "from": "checkout", "to": "cart", "protocol": "grpc", "calls_per_min": 82, "error_rate": 0.0 },
+    { "from": "checkout", "to": "currency", "protocol": "grpc", "calls_per_min": 120, "error_rate": 0.0 },
+    { "from": "checkout", "to": "email", "protocol": "http", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "checkout", "to": "payment", "protocol": "grpc", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "checkout", "to": "product-catalog", "protocol": "grpc", "calls_per_min": 98, "error_rate": 0.0 },
+    { "from": "checkout", "to": "shipping", "protocol": "http", "calls_per_min": 82, "error_rate": 0.0 },
+    { "from": "checkout", "to": "kafka", "protocol": "kafka", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "kafka", "to": "accounting", "protocol": "kafka", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "kafka", "to": "fraud-detection", "protocol": "kafka", "calls_per_min": 41, "error_rate": 0.0 },
+    { "from": "recommendation", "to": "product-catalog", "protocol": "grpc", "calls_per_min": 208, "error_rate": 0.0 },
+    { "from": "shipping", "to": "quote", "protocol": "http", "calls_per_min": 178, "error_rate": 0.0 },
+    { "from": "cart", "to": "valkey-cart", "protocol": "redis", "calls_per_min": 640, "error_rate": 0.0 }
+  ]
+}

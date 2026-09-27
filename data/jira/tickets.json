@@ -1,0 +1,75 @@
+{
+  "description": "Seeded Jira tickets linked to the demo PRs. Served by the seeded planning adapter, which has the same interface as the real Jira adapter.",
+  "tickets": [
+    {
+      "key": "AD-31",
+      "summary": "Refresh ad copy for the spring sale",
+      "description": "Marketing wants the product-page ads to lead with 'Spring sale'. Update the ad text only; no changes to targeting or the AdService API.",
+      "type": "Task",
+      "status": "In Review",
+      "components": ["ad"],
+      "assignee": "lucia-growth",
+      "acceptance": ["Ad text for binoculars, telescopes and imagers mentions the spring sale", "No API or targeting change"]
+    },
+    {
+      "key": "REC-88",
+      "summary": "Show up to 10 stable recommendations on the product page",
+      "description": "Product page carousel should show up to 10 recommendations instead of 5, and the list should be stable between reloads (no random shuffle). Make the max configurable via RECOMMENDATION_MAX_RESPONSES.",
+      "type": "Story",
+      "status": "In Review",
+      "components": ["recommendation"],
+      "assignee": "nadia-discovery",
+      "acceptance": ["ListRecommendations returns up to 10 product ids", "Order is deterministic", "Max is configurable"]
+    },
+    {
+      "key": "PAY-142",
+      "summary": "Add currency code to the charge response for refund reporting",
+      "description": "Finance needs the settlement currency on every charge so refunds can be reconciled. Add a currency_code field to ChargeResponse and populate it in the payment service. This is additive; existing consumers must keep working.",
+      "type": "Story",
+      "status": "In Review",
+      "components": ["payment"],
+      "assignee": "priya-payments",
+      "acceptance": ["ChargeResponse carries currency_code", "Additive change only; no existing fields change"]
+    },
+    {
+      "key": "CART-57",
+      "summary": "Expire abandoned carts after 7 days",
+      "description": "Set a TTL on cart keys in Valkey so abandoned carts are cleaned up after 7 days.",
+      "type": "Task",
+      "status": "To Do",
+      "components": ["cart"],
+      "assignee": "tomas-cart",
+      "acceptance": ["Cart keys carry a 7 day TTL"]
+    },
+    {
+      "key": "CHK-203",
+      "summary": "Retry payment once on transient gRPC UNAVAILABLE",
+      "description": "Checkout should retry the Charge call once when payment returns UNAVAILABLE, with an idempotency key.",
+      "type": "Story",
+      "status": "To Do",
+      "components": ["checkout"],
+      "assignee": "devi-checkout",
+      "acceptance": ["Single retry on UNAVAILABLE", "Idempotency key sent on retry"]
+    },
+    {
+      "key": "SHIP-19",
+      "summary": "Cache shipping quotes for 60 seconds",
+      "description": "Reduce load on quote by caching identical quote requests for 60s in the shipping service.",
+      "type": "Task",
+      "status": "To Do",
+      "components": ["shipping"],
+      "assignee": "kwame-fulfil",
+      "acceptance": ["Identical quote requests within 60s are served from cache"]
+    },
+    {
+      "key": "CUR-12",
+      "summary": "Add JPY rounding rules",
+      "description": "Currency conversion to JPY must round to whole units.",
+      "type": "Bug",
+      "status": "To Do",
+      "components": ["currency"],
+      "assignee": "leo-payments",
+      "acceptance": ["JPY conversions have zero nanos"]
+    }
+  ]
+}
