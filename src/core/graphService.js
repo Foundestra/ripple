@@ -62,6 +62,7 @@ export class GraphService {
           experiments,
           source: res.source,
           capturedAt: res.capturedAt,
+          mock: !!res.mock,
           stale: fellBack,
           error: fellBack ? this.attempts.map((a) => `${a.source}: ${a.error}`).join('; ') : null,
         });

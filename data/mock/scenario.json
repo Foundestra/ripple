@@ -1,0 +1,19 @@
+{
+  "description": "Ground truth for Ripple's OTel mock. Traffic comes from data/graph-snapshot.json. `propagation` is the fraction of a callee's failures that surface as failures of the caller's own requests (1 = hard, 0 = soft). Ripple never reads this file: it has to discover hard vs soft edges by running failure experiments against the mock, exactly as it does against the real OpenTelemetry Demo.",
+  "default_sync_propagation": 1.0,
+  "default_async_propagation": 0.0,
+  "propagation": {
+    "frontend->ad": 0.0,
+    "frontend->recommendation": 0.0,
+    "checkout->email": 0.0
+  },
+  "base_error_rate": 0.002,
+  "flags": {
+    "paymentFailure": { "service": "payment", "effect": "variant_fraction", "note": "Fails n% of Charge calls" },
+    "paymentUnreachable": { "service": "payment", "effect": "on_means", "value": 1.0, "note": "Payment address unreachable from checkout" },
+    "adFailure": { "service": "ad", "effect": "on_means", "value": 0.1, "note": "Fails 1 in 10 GetAds calls" },
+    "cartFailure": { "service": "cart", "effect": "variant_fraction", "note": "Fails n% of cart calls" },
+    "productCatalogFailure": { "service": "product-catalog", "effect": "on_means", "value": 0.12, "note": "GetProduct fails for one product id" },
+    "emailMemoryLeak": { "service": "email", "effect": "variant_fraction_scaled", "scale": 0.004, "note": "Email restarts under memory pressure" }
+  }
+}

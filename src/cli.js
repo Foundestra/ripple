@@ -5,6 +5,12 @@ import { createRipple } from './app.js';
 import { listFixtures, loadFixturePr, prFromPatch } from './adapters/fixtures.js';
 import { runExperiment } from './experiments/runner.js';
 
+// Against the OTel mock, default to the flag file it watches.
+function mockFlagdFile(config) {
+  const f = process.env.OTEL_MOCK_FLAGD_FILE || `${config.dataDir}/runtime/flagd.json`;
+  return fs.existsSync(f) ? f : undefined;
+}
+
 const USAGE = `ripple <command>
 
   analyze --fixture pr1|pr2|pr3        Analyze a bundled demo PR and print the comment
@@ -13,6 +19,7 @@ const USAGE = `ripple <command>
   graph                                Print the current dependency graph and its source
   graph snapshot                       Save the live graph as data/graph-snapshot.json
   experiment --flag paymentFailure --target payment [--variant 100%] [--flagd-file path]
+             (against the OTel mock, --flagd-file defaults to data/runtime/flagd.json)
              [--baseline 60] [--duration 60] [--recovery 60]
                                        Run a failure-injection experiment and record hard/soft verdicts
 
@@ -101,7 +108,7 @@ async function main() {
       flag: values.flag,
       target: values.target,
       variant: values.variant,
-      flagdFile: values['flagd-file'],
+      flagdFile: values['flagd-file'] || (graphService.graph.mock ? mockFlagdFile(config) : undefined),
       baselineSec: Number(values.baseline),
       durationSec: Number(values.duration),
       recoverySec: Number(values.recovery),

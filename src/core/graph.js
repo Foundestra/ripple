@@ -10,9 +10,10 @@ const SOFT_PROTOCOLS = new Set(['kafka', 'messaging', 'redis', 'cache']);
 const SOFT_CALLEE_KINDS = new Set(['cache', 'queue']);
 
 export class DependencyGraph {
-  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null }) {
+  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null, mock = false }) {
     this.catalog = catalog;
     this.source = source;
+    this.mock = mock;
     this.capturedAt = capturedAt;
     this.stale = stale;
     this.error = error;
@@ -64,7 +65,7 @@ export class DependencyGraph {
         if (!e) continue;
         e.kind = v.result;
         e.kind_source = 'experiment';
-        e.experiment = { flag: exp.flag, origin: exp.origin, baseline_error: v.baseline_error, during_error: v.during_error };
+        e.experiment = { flag: exp.flag, origin: exp.origin, environment: exp.environment || null, propagation: v.propagation ?? null, baseline_error: v.baseline_error, during_error: v.during_error };
         e.kind_reason =
           v.result === 'hard'
             ? `Verified by failure experiment \`${exp.flag}\`: ${v.evidence}`
@@ -141,6 +142,7 @@ export class DependencyGraph {
   toJSON() {
     return {
       source: this.source,
+      mock: this.mock,
       captured_at: this.capturedAt,
       stale: this.stale,
       error: this.error,

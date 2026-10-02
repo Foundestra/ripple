@@ -153,6 +153,7 @@ h2 { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; margin: 0; letter-spa
 .g-edge { fill: none; stroke-linecap: round; transition: opacity 0.25s, stroke-width 0.25s; }
 .g-edge.hard { stroke: var(--hard); stroke-width: 2.25; }
 .g-edge.soft { stroke: var(--soft); stroke-width: 1.75; stroke-dasharray: 6 5; }
+.g-edge.erroring { stroke: var(--critical); stroke-width: 3; stroke-dasharray: 8 6; animation: flow 0.8s linear infinite; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--critical) 60%, transparent)); }
 .g-edge-hit { fill: none; stroke: transparent; stroke-width: 14; cursor: help; }
 .g-node { cursor: pointer; }
 .g-node rect { stroke: var(--border); stroke-width: 1; transition: opacity 0.25s; }
@@ -207,7 +208,7 @@ h2 { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; margin: 0; letter-spa
 .tag.soft { background: var(--surface-2); color: var(--ink-2); }
 .verdict p { margin: 8px 0 0; color: var(--ink-2); font-size: 13px; }
 .verdict .delta { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.verdict .delta small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.verdict .delta small { display: block; font-size: 13px; color: var(--muted); font-weight: 500; line-height: 1.35; }
 
 /* PR theater */
 .theater { display: grid; grid-template-columns: minmax(360px, 5fr) 7fr; gap: 20px; flex: 1; min-height: 0; }
@@ -302,6 +303,7 @@ h2 { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; margin: 0; letter-spa
 .pill.seeded { color: var(--ink-2); background: var(--surface-2); }
 .pill.fallback { color: #b37a00; background: color-mix(in srgb, var(--warning) 20%, transparent); }
 :root[data-theme='dark'] .pill.fallback { color: var(--warning); }
+.pill.mock { color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
 
 .btn { font: inherit; font-size: 13px; border-radius: 8px; padding: 5px 12px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
 .btn.ghost:hover { background: var(--surface-2); }

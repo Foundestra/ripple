@@ -15,8 +15,11 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "demo": "RIPPLE_GRAPH_SOURCE=seeded node src/server.js",
+    "demo:full": "node scripts/full-demo.js",
+    "mock:otel": "node src/mock/otelMock.js",
     "analyze": "node src/cli.js analyze",
     "experiment": "node src/cli.js experiment",
+    "webhook:replay": "node scripts/replay-webhook.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {

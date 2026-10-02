@@ -1,0 +1,105 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "paymentFailure": {
+      "defaultVariant": "off",
+      "description": "Fail payment service charge requests n%",
+      "state": "ENABLED",
+      "variants": {
+        "10%": 0.1,
+        "100%": 1,
+        "25%": 0.25,
+        "50%": 0.5,
+        "75%": 0.75,
+        "90%": 0.95,
+        "off": 0
+      }
+    },
+    "paymentUnreachable": {
+      "defaultVariant": "off",
+      "description": "Payment service is unavailable",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "adFailure": {
+      "defaultVariant": "off",
+      "description": "Fail ad service",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "cartFailure": {
+      "defaultVariant": "off",
+      "description": "Fail cart service n% of the time",
+      "state": "ENABLED",
+      "variants": {
+        "10%": 0.1,
+        "100%": 1,
+        "25%": 0.25,
+        "50%": 0.5,
+        "75%": 0.75,
+        "90%": 0.9,
+        "off": 0
+      }
+    },
+    "productCatalogFailure": {
+      "defaultVariant": "off",
+      "description": "Fail product catalog service on a specific product",
+      "state": "ENABLED",
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              {
+                "var": "product_id"
+              },
+              "OLJCESPC7Z"
+            ]
+          },
+          "off",
+          "off"
+        ]
+      },
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "recommendationCacheFailure": {
+      "defaultVariant": "off",
+      "description": "Fail recommendation service cache",
+      "state": "ENABLED",
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    },
+    "kafkaQueueProblems": {
+      "defaultVariant": "off",
+      "description": "Overloads Kafka queue while simultaneously introducing a consumer side delay leading to a lag spike",
+      "state": "ENABLED",
+      "variants": {
+        "off": 0,
+        "on": 100
+      }
+    },
+    "emailMemoryLeak": {
+      "defaultVariant": "off",
+      "description": "Memory leak in the email service.",
+      "state": "ENABLED",
+      "variants": {
+        "10000x": 10000,
+        "1000x": 1000,
+        "100x": 100,
+        "10x": 10,
+        "1x": 1,
+        "off": 0
+      }
+    }
+  }
+}

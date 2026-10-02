@@ -4,7 +4,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { PrometheusServiceGraphSource, JaegerDependencySource, SnapshotSource } from '../src/adapters/graphSources.js';
+import { PrometheusServiceGraphSource, JaegerDependencySource, SnapshotSource, loadExperiments } from '../src/adapters/graphSources.js';
+import { startOtelMock, OtelSimulation, evalPromQL } from '../src/mock/otelMock.js';
 import { DependencyGraph } from '../src/core/graph.js';
 import { loadCatalog } from '../src/adapters/catalog.js';
 import { runExperiment } from '../src/experiments/runner.js';
@@ -15,7 +16,8 @@ const vector = (res, rows) => { res.writeHead(200, { 'Content-Type': 'applicatio
 
 test('Prometheus servicegraph source builds edges with protocol, rate and error rate', async () => {
   const { s, url } = await listen((req, res) => {
-    const q = new URL(req.url, 'http://x').searchParams.get('query');
+    const q = new URL(req.url, 'http://x').searchParams.get('query') || '';
+    if (!q) return vector(res, []); // buildinfo etc.
     if (q.includes('timestamp(')) return vector(res, [{ metric: { client: 'checkout', server: 'payment' }, value: [0, '1790000000'] }]);
     if (q.includes('failed_total')) return vector(res, [{ metric: { client: 'checkout', server: 'payment' }, value: [0, '3'] }]);
     vector(res, [
@@ -52,33 +54,66 @@ test('Jaeger dependencies source', async () => {
   }
 });
 
-test('experiment runner flips flagd, measures, restores, and records verdicts', async () => {
+test('experiment runner discovers hard and soft edges against the OTel mock, and restores the flag', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ripple-exp-'));
-  const flagd = path.join(tmp, 'demo.flagd.json');
-  const original = JSON.stringify({ flags: { paymentFailure: { defaultVariant: 'off', variants: { off: 0, '100%': 1 } } } }, null, 2);
-  fs.writeFileSync(flagd, original);
-  fs.mkdirSync(path.join(tmp, 'data'));
-  const on = () => JSON.parse(fs.readFileSync(flagd, 'utf8')).flags.paymentFailure.defaultVariant !== 'off';
-
-  // Fake Prometheus: while the flag is on, payment and checkout error; frontend absorbs it.
-  const { s, url } = await listen((req, res) => {
-    const q = new URL(req.url, 'http://x').searchParams.get('query');
-    if (q === 'up') return vector(res, [{ metric: {}, value: [0, '1'] }]);
-    const failing = on() && (/"payment"/.test(q) || /service_name="checkout"/.test(q) || /client="checkout"/.test(q));
-    vector(res, [{ metric: {}, value: [0, failing ? '0.9' : '0.001'] }]);
-  });
+  const flagd = path.join(tmp, 'flagd.json');
+  fs.copyFileSync(path.join(ROOT, 'data', 'mock', 'demo.flagd.json'), flagd);
+  const original = fs.readFileSync(flagd, 'utf8');
+  const mock = await startOtelMock({ port: 0, flagdFile: flagd });
   try {
-    const snap = await new SnapshotSource({ dataDir: path.join(ROOT, 'data') }).fetch();
-    const graph = new DependencyGraph({ edges: snap.edges, catalog: loadCatalog(path.join(ROOT, 'data')) });
-    const config = { dataDir: path.join(tmp, 'data'), graph: { prometheusUrl: url, requestMetric: 'req_total', failedMetric: 'failed_total' } };
-    const out = await runExperiment({ config, graph, flag: 'paymentFailure', target: 'payment', flagdFile: flagd, baselineSec: 0.2, durationSec: 0.4, recoverySec: 0.1, stepSec: 0.02, log: () => {} });
+    const url = `http://localhost:${mock.port}`;
+    const live = await new PrometheusServiceGraphSource({ prometheusUrl: url, requestMetric: 'traces_service_graph_request_total', failedMetric: 'traces_service_graph_request_failed_total', lookbackMin: 60 }).fetch();
+    assert.equal(live.mock, true, 'mock identifies itself');
+    const graph = new DependencyGraph({ edges: live.edges, catalog: loadCatalog(path.join(ROOT, 'data')), mock: true });
+    const config = { dataDir: tmp, graph: { prometheusUrl: url, requestMetric: 'traces_service_graph_request_total', failedMetric: 'traces_service_graph_request_failed_total' } };
+    const run = (flag, target, variant) => runExperiment({ config, graph, flag, target, variant, flagdFile: flagd, baselineSec: 0.2, durationSec: 0.3, recoverySec: 0.05, stepSec: 0.05, log: () => {} });
+
+    const pay = await run('paymentFailure', 'payment', '100%');
+    const v = Object.fromEntries(pay.verdicts.map((x) => [`${x.from}->${x.to}`, x]));
+    assert.equal(v['checkout->payment'].result, 'hard');
+    assert.equal(v['frontend->checkout'].result, 'hard', 'frontend serves far more than checkout traffic, but propagation still shows the hard edge');
+    assert.ok(v['frontend->checkout'].during_error < 0.1, 'frontend overall error rate barely moves');
+    assert.equal(pay.environment, 'mock');
     assert.equal(fs.readFileSync(flagd, 'utf8'), original, 'flag restored');
-    const v = Object.fromEntries(out.verdicts.map((x) => [`${x.from}->${x.to}`, x.result]));
-    assert.equal(v['checkout->payment'], 'hard');
-    assert.equal(v['frontend->checkout'], 'soft');
-    assert.ok(fs.existsSync(path.join(tmp, 'data', 'experiments', 'paymentFailure.json')));
+
+    const ad = await run('adFailure', 'ad', 'on');
+    assert.equal(ad.verdicts.find((x) => x.from === 'frontend').result, 'soft');
+    assert.ok(fs.existsSync(path.join(tmp, 'runtime', 'experiments', 'adFailure.json')));
+    const loaded = loadExperiments(tmp);
+    assert.deepEqual(loaded.map((x) => x.flag).sort(), ['adFailure', 'paymentFailure']);
   } finally {
-    s.close();
+    await mock.close();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('OTel mock speaks the PromQL subset Ripple uses, and the Jaeger API', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ripple-mock-'));
+  const flagd = path.join(tmp, 'flagd.json');
+  fs.copyFileSync(path.join(ROOT, 'data', 'mock', 'demo.flagd.json'), flagd);
+  const sim = new OtelSimulation({ flagdFile: flagd, noise: false });
+  const one = (q) => Number(evalPromQL(q, sim.state())[0].value[1]);
+  const ratio = (s) => one(`sum(rate(traces_span_metrics_calls_total{service_name="${s}",status_code="STATUS_CODE_ERROR"}[30s])) / sum(rate(traces_span_metrics_calls_total{service_name="${s}"}[30s]))`);
+  assert.ok(ratio('payment') < 0.01);
+  const doc = JSON.parse(fs.readFileSync(flagd, 'utf8'));
+  doc.flags.paymentFailure.defaultVariant = '50%';
+  fs.writeFileSync(flagd, JSON.stringify(doc));
+  assert.ok(Math.abs(ratio('payment') - 0.5) < 0.01);
+  assert.ok(ratio('checkout') > 0.45);
+  const grouped = evalPromQL('sum by (client, server, connection_type) (rate(traces_service_graph_request_total[60m])) * 60', sim.state());
+  assert.equal(grouped.find((r) => r.metric.client === 'checkout' && r.metric.server === 'kafka').metric.connection_type, 'messaging_system');
+  assert.throws(() => evalPromQL('histogram_quantile(0.9, foo)', sim.state()), /unsupported/);
+
+  const mock = await startOtelMock({ port: 0, flagdFile: flagd });
+  try {
+    const j = await new JaegerDependencySource({ jaegerUrl: `http://localhost:${mock.port}/jaeger/ui`, lookbackMin: 60 }).fetch();
+    assert.equal(j.mock, true);
+    assert.ok(j.edges.some((e) => e.from === 'checkout' && e.to === 'payment'));
+    const flip = await fetch(`http://localhost:${mock.port}/flags/adFailure?variant=on`, { method: 'POST' });
+    assert.equal(flip.status, 200);
+    assert.equal(JSON.parse(fs.readFileSync(flagd, 'utf8')).flags.adFailure.defaultVariant, 'on');
+  } finally {
+    await mock.close();
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });

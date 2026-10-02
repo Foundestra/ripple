@@ -111,7 +111,7 @@ function factorsBlock(a) {
 
 function footer(a) {
   const s = a.sources;
-  const graph = `graph: ${s.graph}${s.graphStale ? ' (fallback)' : ''}`;
+  const graph = `graph: ${s.graph}${s.graphMock ? ' (OTel mock)' : ''}${s.graphStale ? ' (fallback)' : ''}`;
   return `<sub>Ripple advises; a human makes the merge call. · ${graph} · planning: ${s.planning} · incidents: ${s.incidents} · ${a.timings.totalMs} ms</sub>`;
 }
 

@@ -123,7 +123,7 @@ function drawGraph() {
     const a = xy.get(e.from), b = xy.get(e.to);
     const x1 = a.x + NW / 2, x2 = b.x - NW / 2, mx = (x1 + x2) / 2;
     const d = `M${x1},${a.y} C${mx},${a.y} ${mx},${b.y} ${x2},${b.y}`;
-    const path = el('svg:path', { d, class: `g-edge ${e.kind}`, 'data-from': e.from, 'data-to': e.to });
+    const path = el('svg:path', { d, class: `g-edge ${e.kind}${e.error_rate >= 0.05 ? ' erroring' : ''}`, 'data-from': e.from, 'data-to': e.to });
     const hit = el('svg:path', { d, class: 'g-edge-hit' });
     hit.addEventListener('mousemove', (ev) => showTip(ev, edgeTip(e)));
     hit.addEventListener('mouseleave', hideTip);
@@ -155,7 +155,10 @@ function drawGraph() {
   const hard = g.edges.filter((e) => e.kind === 'hard').length;
   const live = g.source === 'prometheus' || g.source === 'jaeger';
   const services = g.nodes.filter((n) => n.kind !== 'synthetic').length;
-  $('#graphSub').textContent = live
+  const failing = g.edges.filter((e) => e.error_rate >= 0.05).length;
+  $('#graphSub').textContent = live && g.mock
+    ? `Rebuilt every few seconds from Ripple's OTel mock (simulated Astronomy Shop traffic, served through the real ${g.source === 'prometheus' ? 'Prometheus' : 'Jaeger'} API): ${services} services, ${g.edges.length} edges (${hard} hard).${failing ? ` ${failing} edge${failing > 1 ? 's' : ''} failing right now.` : ''}`
+    : live
     ? `Rebuilt from live ${g.source === 'prometheus' ? 'OTel servicegraph metrics' : 'Jaeger traces'} across ${services} services, ${g.edges.length} edges (${hard} hard). Refreshed ${timeAgo(g.captured_at)}.`
     : `${services} services, ${g.edges.length} edges (${hard} hard). Showing the offline snapshot${g.stale ? ' because the live stack is unreachable' : ''}; start the OpenTelemetry Demo for live traces.`;
 }
@@ -265,8 +268,9 @@ function drawExperiment(animate) {
   const css = getComputedStyle(document.documentElement);
   const colors = ['--series-1', '--series-2', '--series-3'].map((v) => css.getPropertyValue(v).trim());
   // At most three series: the failing target and the callers whose fate decides the edge.
-  const series = [x.series.find((s) => s.role === 'target'), ...x.series.filter((s) => s.role === 'upstream'), ...x.series.filter((s) => s.role === 'edge')]
-    .filter(Boolean).slice(0, 3);
+  // The failing target, the first caller, and what that caller's own callers saw; then anything else.
+  const pick = [x.series.find((s) => s.role === 'target'), x.series.find((s) => s.role === 'upstream'), x.series.find((s) => s.role === 'upstream-edge'), ...x.series];
+  const series = [...new Set(pick.filter(Boolean))].slice(0, 3);
   const svg = $('#expChart');
   svg.replaceChildren();
   const W = svg.clientWidth || 800, H = svg.clientHeight || 360;
@@ -278,7 +282,9 @@ function drawExperiment(animate) {
   const sy = (v) => H - m.b - v * (H - m.t - m.b);
 
   $('#expTitle').textContent = `Error rate while ${x.flag} fails ${x.target}`;
-  $('#expNote').textContent = x.origin === 'recorded' ? `Recorded ${new Date(x.recorded_at).toLocaleString()} against the live demo.` : x.note || '';
+  $('#expNote').textContent = x.origin === 'recorded'
+    ? `Recorded ${new Date(x.recorded_at).toLocaleString()} against ${x.environment === 'mock' ? "Ripple's OTel mock (simulated traffic, real flagd flag flip and Prometheus queries)" : 'the live OpenTelemetry Demo'}.`
+    : x.note || '';
 
   const axis = el('svg:g', { class: 'axis' });
   for (const v of [0, 0.25, 0.5, 0.75, 1]) {
@@ -330,7 +336,9 @@ function drawExperiment(animate) {
     el('div', { class: 'verdict' },
       el('span', { class: `tag ${v.result}`, text: v.result.toUpperCase() }),
       el('div', { class: 'edge', text: `${v.from} → ${v.to}` }),
-      el('div', { class: 'delta' }, `${pct(v.baseline_error)} → ${pct(v.during_error)} `, el('small', { text: `${v.from} errors` })),
+      v.propagation != null
+        ? el('div', { class: 'delta' }, `${Math.round(v.propagation * 100)}% `, el('small', { text: `of failed ${v.to} calls became failed ${v.from} requests` }))
+        : el('div', { class: 'delta' }, `${pct(v.baseline_error)} → ${pct(v.during_error)} `, el('small', { text: `${v.from} errors` })),
       el('p', { text: v.result === 'hard' ? `${v.to} failing takes ${v.from} down with it. Changes to ${v.to} need ${v.from}'s owners in the review.` : `${v.from} absorbs ${v.to} failures. Ripple warns about this edge instead of blocking.` }))));
 
   if (!animate) { $$('.verdict', vs).forEach((v) => v.classList.add('show')); return; }
@@ -486,6 +494,11 @@ function connectEvents() {
     if (!state.running) showAnalysis(await api(`/api/analyses/${s.id}`));
   });
   es.addEventListener('graph', () => refreshGraph());
+  es.addEventListener('experiments', async () => {
+    state.experiments = sortExperiments(await api('/api/experiments'));
+    renderExpTabs();
+    drawExperiment(true);
+  });
 }
 
 /* ---------------- status: live vs seeded ---------------- */
@@ -493,21 +506,31 @@ function renderStatus() {
   const s = state.status;
   const liveGraph = s.graph.source === 'prometheus' || s.graph.source === 'jaeger';
   const recorded = s.experiments.filter((e) => e.origin === 'recorded');
+  const recordedLive = recorded.filter((e) => e.environment !== 'mock');
+  const graphState = liveGraph ? (s.graph.mock ? 'mock' : 'live') : s.graph.stale ? 'fallback' : 'seeded';
+  const expState = recordedLive.length ? 'live' : recorded.length ? 'mock' : 'seeded';
   const rows = [
-    ['Dependency edges and chains', liveGraph ? 'live' : s.graph.stale ? 'fallback' : 'seeded', liveGraph ? `OTel traces via ${s.graph.source === 'prometheus' ? 'Collector servicegraph → Prometheus' : 'Jaeger dependencies API'}${s.graph.store === 'postgres' ? ', recursive CTEs in Postgres' : ''}` : 'Offline snapshot of the demo call graph (live stack not reachable)'],
-    ['Hard vs. soft classification', recorded.length ? 'live' : 'seeded', recorded.length ? `flagd failure injection + trace correlation (${recorded.map((e) => e.flag).join(', ')})` : `Sample recordings (${s.experiments.map((e) => e.flag).join(', ')}); run npm run experiment to record live ones`],
+    ['Dependency edges and chains', graphState, graphState === 'mock' ? `Ripple's OTel mock via the ${s.graph.source === 'prometheus' ? 'Prometheus servicegraph' : 'Jaeger dependencies'} API (simulated Astronomy Shop traffic)` : liveGraph ? `OTel traces via ${s.graph.source === 'prometheus' ? 'Collector servicegraph → Prometheus' : 'Jaeger dependencies API'}${s.graph.store === 'postgres' ? ', recursive CTEs in Postgres' : ''}` : 'Offline snapshot of the demo call graph (live stack not reachable)'],
+    ['Hard vs. soft classification', expState, expState === 'live' ? `flagd failure injection + trace correlation (${recordedLive.map((e) => e.flag).join(', ')})` : expState === 'mock' ? `flagd failure injection against the OTel mock (${recorded.map((e) => e.flag).join(', ')})` : `Sample recordings (${s.experiments.map((e) => e.flag).join(', ')}); run npm run experiment to record live ones`],
     ['Change risk and CI', s.github.configured ? 'live' : 'live', s.github.configured ? `Real PRs via GitHub webhook (${s.github.mode === 'app' ? 'GitHub App + Checks API' : 'token + commit status'})` : 'Real OpenTelemetry Demo patches parsed from the diff (connect GitHub for webhooks)'],
     ['Service tier and owners', 'seeded', 'Hand-written catalog YAML (data/catalog.yaml)'],
     ['Jira tickets', s.planning === 'jira' ? 'live' : 'seeded', s.planning === 'jira' ? 'Jira Cloud REST API' : '7 tickets linked to the demo PRs (data/jira/tickets.json)'],
     ['Incidents and RCAs', s.incidents === 'seeded' ? 'seeded' : 'live', '10 writeups, several from failures triggered on purpose (data/incidents)'],
     ['Specialist agents', s.llm === 'none' ? 'seeded' : 'live', s.llm === 'none' ? 'Deterministic agents (set GEMINI_API_KEY for model-written judgement)' : `Deterministic agents + ${s.llm} for intent and verdict`],
   ];
+  $('#honestyTitle').textContent =
+    graphState === 'live' && expState === 'live'
+      ? 'Graph and failures are real. Jira and incidents are seeded behind swappable adapters.'
+      : graphState === 'mock' || expState === 'mock'
+      ? 'Graph and failures run on a simulated Astronomy Shop through the real APIs. Jira and incidents are seeded behind swappable adapters.'
+      : 'Running offline on seeded data. Every source sits behind an adapter with the same interface as its real integration.';
   $('#statusTable tbody').replaceChildren(...rows.map(([a, st, src]) =>
-    el('tr', {}, el('td', { text: a }), el('td', {}, el('span', { class: `pill ${st}`, text: st === 'fallback' ? 'Fallback' : st === 'live' ? 'Live' : 'Seeded' })), el('td', { text: src }))));
+    el('tr', {}, el('td', { text: a }), el('td', {}, el('span', { class: `pill ${st}`, text: { fallback: 'Fallback', live: 'Live', mock: 'Mock', seeded: 'Seeded' }[st] })), el('td', { text: src }))));
 
   const chip = $('#graphChip');
-  const color = liveGraph ? 'var(--good)' : s.graph.stale ? 'var(--warning)' : 'var(--muted)';
-  chip.replaceChildren(el('span', { class: 'dot', style: `background:${color}` }), `graph: ${liveGraph ? `live · ${s.graph.source}` : s.graph.stale ? 'snapshot (live unreachable)' : 'snapshot'}`);
+  const color = { live: 'var(--good)', mock: 'var(--accent)', fallback: 'var(--warning)', seeded: 'var(--muted)' }[graphState];
+  const label = { live: `live · ${s.graph.source}`, mock: `mock OTel · ${s.graph.source} API`, fallback: 'snapshot (live unreachable)', seeded: 'snapshot' }[graphState];
+  chip.replaceChildren(el('span', { class: 'dot', style: `background:${color}` }), `graph: ${label}`);
   chip.title = s.graph.attempts.map((x) => `${x.source}: ${x.ok ? 'ok' : x.error}`).join('\n');
 }
 
@@ -534,14 +557,18 @@ function timeAgo(iso) {
 
 async function refreshGraph() {
   [state.graph, state.status] = await Promise.all([api('/api/graph'), api('/api/status')]);
+  const selected = $('.g-node.selected')?.dataset.name;
   drawGraph();
+  if (selected) selectService(selected);
   renderStatus();
   renderHeroStats();
 }
 
+const sortExperiments = (xs) => xs.sort((a, b) => (a.flag === 'paymentFailure' ? -1 : b.flag === 'paymentFailure' ? 1 : a.flag.localeCompare(b.flag)));
+
 async function init() {
   const [experiments, prs, analyses] = await Promise.all([api('/api/experiments'), api('/api/demo/prs'), api('/api/analyses')]);
-  state.experiments = experiments.sort((a, b) => (a.flag === 'paymentFailure' ? -1 : b.flag === 'paymentFailure' ? 1 : 0));
+  state.experiments = sortExperiments(experiments);
   state.prs = prs;
   await refreshGraph();
   renderExpTabs();

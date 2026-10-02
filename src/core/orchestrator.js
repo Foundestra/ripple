@@ -91,6 +91,7 @@ export class Orchestrator {
       sources: {
         graph: graph?.source,
         graphStale: graph?.stale,
+        graphMock: graph?.mock,
         graphStore: this.config.graph.store,
         planning: this.planning.name,
         incidents: this.incidentSource.name,

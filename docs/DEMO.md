@@ -1,5 +1,7 @@
 # Demo guide: 5-minute slot
 
+Setup for every level (offline, OTel mock, real GitHub, real OpenTelemetry Demo) is in [JUMPSTART.md](JUMPSTART.md). This page is the show itself.
+
 The dashboard (`npm run demo`, http://localhost:4000) is the deck. Each section is one beat of the run of show.
 
 | Key | Action |
@@ -15,12 +17,12 @@ The dashboard (`npm run demo`, http://localhost:4000) is the deck. Each section 
 | Time | Section | What we show | What we say |
 |---|---|---|---|
 | 0:00 | **Title** | Title slide | "Most outages start as a PR someone approved. The reviewer just couldn't see what it touched." |
-| 0:30 | **Dependency map** | Live graph. Click `payment`: checkout, frontend and frontend-proxy light up as *breaks* | "This map isn't drawn by hand. It's rebuilt from real traffic across 15 services." |
+| 0:30 | **Dependency map** | Live graph. Click `payment`: checkout, frontend and frontend-proxy light up as *breaks*. With `demo:full`, flip `paymentFailure` from the second terminal and the edges turn red within 5s; turn it off again | "This map isn't drawn by hand. It's rebuilt from traffic every few seconds. Watch what happens when payment breaks." |
 | 1:00 | **Failure experiment** | The chart replays: payment fails, checkout errors spike with it. Flip to `adFailure`: frontend stays flat | "That's how we know checkout-to-payment is a hard edge. We broke it on purpose." |
 | 1:40 | **Three PRs → `1`** | Ad copy tweak. Agents are struck through and a green LOW comment lands | "Low risk. No extra reviewers, no delay. Most PRs should feel like this." |
 | 2:10 | **`2`** | Recommendation change. MEDIUM, all chains *degrade*, INC-1877 | "Frontend depends on this, but degrades gracefully. Ripple says so instead of crying wolf." |
 | 2:50 | **`3`** | Payment contract. HIGH. Walk the comment top to bottom: verdict → blast radius (checkout ⇒ payment, **breaks**) → INC-2031 → PAY-142 mismatch → reviewers → checks | "It removes a field checkout reads. Checkout is a hard edge, we've had this exact outage, and the ticket said additive only." |
-| 4:10 | **Live vs seeded** | The table (it reflects what's actually connected right now) | "Graph and failures are real. Jira and incidents are seeded behind swappable adapters." |
+| 4:10 | **Live vs seeded** | The table (it reflects what's actually connected right now) | Real stack: "Graph and failures are real. Jira and incidents are seeded behind swappable adapters." OTel mock: "The graph and failure experiments run through the real Prometheus and Jaeger APIs against a simulated shop; pointing them at production is a URL change." |
 | 4:40 | **Close** | Closing line + comparison | "Ripple gives every PR the judgment of your most senior engineer." |
 
 If you're live on GitHub, open the real PRs in the browser at 1:40 / 2:10 / 2:50 instead of pressing `1` `2` `3`. The comment lands on the PR, and the dashboard's **Live from GitHub** feed shows it too.

@@ -10,6 +10,16 @@ import { verifySignature } from '../src/github/client.js';
 
 const quiet = { error() {}, info() {} };
 
+const PR7 = {
+  number: 7,
+  title: 'PAY-142: currency code on charge response',
+  body: '',
+  head: { sha: 'abc123', ref: 'feature' },
+  user: { login: 'priya-payments' },
+  html_url: 'https://github.com/acme/shop/pull/7',
+  base: { repo: { name: 'shop', owner: { login: 'acme' } } },
+};
+
 // Minimal fake of the GitHub REST endpoints Ripple uses.
 function fakeGitHub(patchFiles) {
   const calls = [];
@@ -23,6 +33,7 @@ function fakeGitHub(patchFiles) {
         res.end(JSON.stringify(obj));
       };
       if (req.url.startsWith('/repos/acme/shop/pulls/7/files')) return send(200, patchFiles);
+      if (req.url === '/repos/acme/shop/pulls/7') return send(200, PR7);
       if (req.url.includes('/commits/abc123/status')) return send(200, { statuses: [{ context: 'ci/build', state: 'success' }] });
       if (req.url.includes('/commits/abc123/check-runs')) return send(200, { check_runs: [] });
       if (req.url.startsWith('/repos/acme/shop/issues/7/comments') && req.method === 'GET') return send(200, []);
@@ -114,5 +125,26 @@ test('dashboard API serves graph, demo PRs and analyses', async () => {
     assert.equal((await fetch(`${base}/../package.json`)).status, 404);
   } finally {
     await app.close();
+  }
+});
+
+test('replay-webhook script delivers a real PR as a signed webhook', async () => {
+  const gh = await fakeGitHub(filesPayload('pr3-payment-contract'));
+  const github = { token: 'test-token', apiUrl: gh.url, webhookSecret: 'replay-secret', appId: '', privateKey: '', privateKeyPath: '', requestReviewers: false, publicUrl: '' };
+  const app = await startServer({ port: 0, log: quiet, graph: { source: 'seeded', refreshSec: 0 }, llm: { provider: 'none' }, github });
+  try {
+    const { execFile } = await import('node:child_process');
+    const out = await new Promise((resolve, reject) =>
+      execFile(process.execPath, [path.join(ROOT, 'scripts', 'replay-webhook.js'), '--repo', 'acme/shop', '--pr', '7', '--url', `http://localhost:${app.port}/webhook/github`], {
+        env: { ...process.env, GITHUB_TOKEN: 'test-token', GITHUB_API_URL: gh.url, GITHUB_WEBHOOK_SECRET: 'replay-secret' },
+      }, (err, stdout, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve(stdout))),
+    );
+    assert.match(out, /HTTP 202/);
+    for (let i = 0; i < 50 && !gh.calls.some((c) => c.url.includes('/statuses/')); i++) await new Promise((r) => setTimeout(r, 50));
+    const comment = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/issues/7/comments'));
+    assert.match(comment.body.body, /HIGH risk/);
+  } finally {
+    await app.close();
+    gh.server.close();
   }
 });

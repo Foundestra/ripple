@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Kept in sync with src/mock/otelMock.js (not imported, so the adapters never load the mock).
+const MOCK_APP = 'ripple-otel-mock';
+
 // Each source returns { edges: [{ from, to, protocol, calls_per_min, error_rate, last_seen }], capturedAt, source }.
 // All sources share this interface; the graph service picks one (or falls back).
 
@@ -34,6 +37,7 @@ export class PrometheusServiceGraphSource {
       this.query(`max by (client, server) (timestamp(${this.requestMetric}))`),
     ]);
     if (!calls.length) throw new Error(`No ${this.requestMetric} series; is the servicegraph connector enabled?`);
+    const build = await fetchJson(`${this.url}/api/v1/status/buildinfo`).catch(() => null);
     const failedBy = new Map(failed.map((r) => [`${r.metric.client}->${r.metric.server}`, Number(r.value[1])]));
     const seenBy = new Map(lastSeen.map((r) => [`${r.metric.client}->${r.metric.server}`, Number(r.value[1])]));
     const edges = calls
@@ -51,7 +55,7 @@ export class PrometheusServiceGraphSource {
           last_seen: seenBy.has(k) ? new Date(seenBy.get(k) * 1000).toISOString() : null,
         };
       });
-    return { edges, capturedAt: new Date().toISOString(), source: 'prometheus' };
+    return { edges, capturedAt: new Date().toISOString(), source: 'prometheus', mock: build?.data?.application === MOCK_APP };
   }
 }
 
@@ -80,7 +84,7 @@ export class JaegerDependencySource {
         error_rate: null,
         last_seen: now,
       }));
-    return { edges, capturedAt: now, source: 'jaeger' };
+    return { edges, capturedAt: now, source: 'jaeger', mock: body.mock === MOCK_APP };
   }
 }
 
@@ -97,14 +101,18 @@ export class SnapshotSource {
   }
 }
 
+// Bundled recordings in data/experiments, overridden per flag by fresh ones the
+// runner wrote to data/runtime/experiments.
 export function loadExperiments(dataDir) {
-  const dir = path.join(dataDir, 'experiments');
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
-    .sort()
-    .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+  const byFlag = new Map();
+  for (const dir of [path.join(dataDir, 'experiments'), path.join(dataDir, 'runtime', 'experiments')]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
+      const x = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      byFlag.set(x.flag, x);
+    }
+  }
+  return [...byFlag.values()];
 }
 
 const round = (n, d = 1) => Math.round(n * 10 ** d) / 10 ** d;

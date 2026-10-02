@@ -30,7 +30,16 @@ export async function startServer(overrides = {}) {
     return a;
   };
 
-  graphService.onChange((g) => broadcast('graph', { source: g.source, captured_at: g.capturedAt, stale: g.stale }));
+  graphService.onChange((g) => broadcast('graph', { source: g.source, mock: g.mock, captured_at: g.capturedAt, stale: g.stale }));
+  // Experiments recorded by the CLI while the server runs show up without a restart.
+  let expStamp = JSON.stringify(graphService.experiments().map((e) => e.recorded_at));
+  graphService.onChange(() => {
+    const stamp = JSON.stringify(graphService.experiments().map((e) => e.recorded_at));
+    if (stamp !== expStamp) {
+      expStamp = stamp;
+      broadcast('experiments', {});
+    }
+  });
   graphService.start();
 
   // Webhook processing is serialized per PR so rapid pushes don't race.
@@ -73,13 +82,14 @@ export async function startServer(overrides = {}) {
       json(200, {
         graph: {
           source: graphService.graph.source,
+          mock: graphService.graph.mock,
           configured: config.graph.source,
           store: config.graph.store,
           stale: graphService.graph.stale,
           captured_at: graphService.graph.capturedAt,
           attempts: graphService.attempts,
         },
-        experiments: graphService.experiments().map((e) => ({ flag: e.flag, origin: e.origin, recorded_at: e.recorded_at })),
+        experiments: graphService.experiments().map((e) => ({ flag: e.flag, origin: e.origin, environment: e.environment || null, recorded_at: e.recorded_at })),
         planning: planning.name,
         incidents: incidentSource.name,
         catalog: 'seeded',

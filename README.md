@@ -29,7 +29,9 @@ npm install
 npm run demo          # http://localhost:4000
 ```
 
-That runs everything on the seeded graph snapshot, catalog, tickets and incidents: no Docker, no keys, no network. The dashboard is a presenter deck that follows the demo script: press `→` to advance and `1` `2` `3` to open the demo PRs. See [docs/DEMO.md](docs/DEMO.md) for the run of show.
+That runs everything on the seeded graph snapshot, catalog, tickets and incidents: no Docker, no keys, no network.
+
+For the **full demo on a laptop**, run `npm run demo:full`. It starts Ripple's **OTel mock**, a simulated Astronomy Shop served through the real Prometheus and Jaeger APIs. Ripple records real failure experiments against it (flagd flag flips) and then refreshes the graph every 5s, so you can break `payment` live and watch the edges turn red. Everything from the mock is labelled *mock*, never *live*. **Start with [docs/JUMPSTART.md](docs/JUMPSTART.md)**: it walks every level, from offline to real GitHub PRs to the real OpenTelemetry Demo. The dashboard is a presenter deck that follows the demo script: press `→` to advance and `1` `2` `3` to open the demo PRs. See [docs/DEMO.md](docs/DEMO.md) for the run of show and [docs/Ripple-pitch.pptx](docs/Ripple-pitch.pptx) for the pitch deck (19 slides with speaker notes).
 
 From the terminal:
 
@@ -131,7 +133,9 @@ Agents are deterministic by default. With `GEMINI_API_KEY` (or `ANTHROPIC_API_KE
      --flagd-file ../opentelemetry-demo/src/flagd/demo.flagd.json
    ```
 
-   Results replace the bundled sample recordings in `data/experiments/` and immediately drive edge classification and the replay chart.
+   Results go to `data/runtime/experiments/` (git-ignored), override the bundled sample recordings in `data/experiments/` flag by flag, and drive edge classification and the replay chart within one graph refresh. Copy them into `data/experiments/` to ship them.
+
+   The runner judges an edge by **propagation**, not raw error rates: the share of failed calls to the callee that became failed requests of the caller (≥ 40% → hard). A busy caller like `frontend` serves far more than checkout traffic, so its overall error rate barely moves even though every checkout failure reaches the user.
 
 4. **Connect GitHub**
    - Create a webhook on your fork: payload URL `https://<ripple-host>/webhook/github`, content type `application/json`, secret = `GITHUB_WEBHOOK_SECRET`, event **Pull requests**.
@@ -147,6 +151,7 @@ Agents are deterministic by default. With `GEMINI_API_KEY` (or `ANTHROPIC_API_KE
 |---|---|---|
 | Dependency edges and chains | Live | OTel traces (Collector servicegraph → Prometheus, or Jaeger) |
 | Hard vs. soft classification | Live | flagd failure injection + trace correlation (`ripple experiment`) |
+| *(with `npm run demo:full`)* graph + experiments | Mock | Ripple's OTel mock: same APIs, simulated traffic; labelled **Mock** everywhere |
 | Change risk and CI | Live | Real PRs via GitHub webhook |
 | Service tier and owners | Seeded | `data/catalog.yaml` |
 | Jira tickets | Seeded | `data/jira/tickets.json` (real Jira adapter: `RIPPLE_PLANNING_SOURCE=jira`) |
@@ -161,7 +166,7 @@ See [`.env.example`](.env.example). Nothing is required for the offline demo.
 ## Tests
 
 ```bash
-npm test                                             # 17 tests: diff/proto parsing, graph, risk gate,
+npm test                                             # 20 tests (1 needs Postgres): diff/proto parsing, graph, risk gate,
                                                      # webhook -> comment against a fake GitHub,
                                                      # Prometheus/Jaeger sources, experiment runner
 RIPPLE_TEST_DATABASE_URL=postgres://... npm test     # + Postgres CTE parity with the in-memory graph
@@ -176,13 +181,14 @@ src/
   core/                   orchestrator, diff + change risk, graph, intent, risk gate, agents, comment
   adapters/               catalog, graph sources (Prometheus/Jaeger/snapshot), Postgres store,
                           planning (seeded/Jira), incidents, LLM (Gemini/Anthropic/none), fixtures
-  experiments/runner.js   flagd failure injection + verdicts
+  experiments/runner.js   flagd failure injection + propagation verdicts
+  mock/otelMock.js        OTel mock: simulated Astronomy Shop behind Prometheus/Jaeger APIs
   github/client.js        App/token auth, PR files, comment upsert, Checks/status
 public/                   presenter dashboard (no build step)
 data/                     catalog, graph snapshot, experiments, Jira tickets, incidents
 fixtures/prs/             the three demo PRs (real OTel Demo patches)
 deploy/                   OTel Collector servicegraph overlay
-scripts/                  create-demo-prs.sh
+scripts/                  full-demo.js, replay-webhook.js, create-demo-prs.sh
 ```
 
 ## Roadmap
