@@ -97,7 +97,7 @@ test('webhook -> analysis -> PR comment + status on GitHub', async () => {
     assert.equal(comment.auth, 'token test-token');
     const status = gh.calls.find((c) => c.url.includes('/statuses/abc123'));
     assert.equal(status.body.state, 'success', 'advisory: never blocks');
-    assert.match(status.body.description, /^HIGH risk/);
+    assert.match(status.body.description, /^HIGH risk: Removes ChargeResponse.transaction_id;/, "identifiers keep their underscores");
     assert.match(status.body.target_url, /^http:\/\/ripple\.test\/#analysis\//);
 
     const list = await (await fetch(`http://localhost:${app.port}/api/analyses`)).json();

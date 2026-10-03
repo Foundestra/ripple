@@ -1,0 +1,10 @@
+# Files Cloud Build does not need (gcloud builds submit)
+.git
+node_modules/
+data/runtime/
+infra/terraform/.terraform/
+infra/github/.app/
+docs/
+test/
+*.log
+.env

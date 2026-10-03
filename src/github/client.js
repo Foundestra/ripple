@@ -156,4 +156,5 @@ export function verifySignature(secret, rawBody, signature) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-const stripMd = (s) => s.replace(/[*`_]/g, '');
+// Check-run titles and status descriptions are plain text: drop markdown emphasis and code ticks, keep identifiers like transaction_id intact.
+const stripMd = (s) => s.replace(/[*`]/g, '');
