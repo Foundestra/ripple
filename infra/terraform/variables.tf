@@ -76,9 +76,8 @@ variable "deploy_repository" {
 }
 
 variable "deploy_branch" {
-  description = "Only this branch of deploy_repository may deploy."
+  description = "Default branch of deploy_repository allowed to deploy. Set this explicitly to match GitHub."
   type        = string
-  default     = "main"
 }
 
 variable "manage_github" {
@@ -126,7 +125,7 @@ variable "max_instances" {
 }
 
 variable "alert_email" {
-  description = "Email for the uptime alert on /healthz. Empty = no alerting."
+  description = "Email for the uptime alert on /api/status. Empty = no alerting."
   type        = string
   default     = ""
 }

@@ -2,9 +2,19 @@
 .git
 node_modules/
 data/runtime/
-infra/terraform/.terraform/
-infra/github/.app/
+infra/
 docs/
 test/
 *.log
 .env
+
+# Local credentials and generated authentication files.
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+gha-creds-*.json
+service-account*.json
+credentials.json

@@ -1,6 +1,6 @@
 {
   "name": "Ripple PR Risk",
-  "url": "https://github.com/tanmaycodes13/ripple",
+  "url": "https://github.com/your-github-owner/ripple",
   "description": "Runtime-informed PR risk review: blast radius from OpenTelemetry, incident history and ticket intent, synthesized by Gemini. Advises and routes reviewers; never blocks a merge.",
   "public": false,
   "hook_attributes": {
@@ -8,12 +8,15 @@
     "active": true
   },
   "redirect_url": "http://localhost:3456/callback",
-  "default_events": ["pull_request"],
+  "default_events": [
+    "pull_request"
+  ],
   "default_permissions": {
     "metadata": "read",
     "contents": "read",
     "pull_requests": "write",
     "issues": "write",
-    "checks": "write"
+    "checks": "write",
+    "statuses": "read"
   }
 }

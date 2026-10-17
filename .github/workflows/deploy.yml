@@ -1,4 +1,4 @@
-# Test, build and roll out Ripple to Cloud Run on every push to main.
+# Test pushes and deploy the repository default branch to Cloud Run.
 # Authenticates to Google Cloud with Workload Identity Federation (no keys).
 # The vars.* values come from `terraform output github_actions_variables`
 # (set automatically when manage_github = true).
@@ -6,7 +6,6 @@ name: deploy
 
 on:
   push:
-    branches: [main]
     paths-ignore:
       - "docs/**"
       - "infra/**"
@@ -34,7 +33,7 @@ jobs:
 
   deploy:
     needs: test
-    if: ${{ vars.GCP_WIF_PROVIDER != '' }}
+    if: ${{ vars.GCP_WIF_PROVIDER != '' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -71,5 +70,5 @@ jobs:
           URL=$(gcloud run services describe "${{ vars.GCP_RUN_SERVICE }}" \
             --project "${{ vars.GCP_PROJECT_ID }}" --region "${{ vars.GCP_REGION }}" \
             --format 'value(status.url)')
-          curl -fsS "$URL/healthz"
+          curl --connect-timeout 5 --max-time 10 -fsS "$URL/api/status"
           echo "Deployed $IMAGE to $URL" >> "$GITHUB_STEP_SUMMARY"

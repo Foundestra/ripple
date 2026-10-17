@@ -1,6 +1,7 @@
 terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.*
-terraform/terraform.tfvars
+terraform/*.tfvars
+terraform/*.tfvars.json
 terraform/*.tfplan
 github/.app/

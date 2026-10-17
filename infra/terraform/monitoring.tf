@@ -1,11 +1,11 @@
 resource "google_monitoring_uptime_check_config" "healthz" {
   count        = var.deploy_service ? 1 : 0
-  display_name = "${var.service_name} /healthz"
+  display_name = "${var.service_name} /api/status"
   timeout      = "10s"
   period       = "300s"
 
   http_check {
-    path         = "/healthz"
+    path         = "/api/status"
     port         = 443
     use_ssl      = true
     validate_ssl = true

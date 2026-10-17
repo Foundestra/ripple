@@ -46,3 +46,12 @@ output "github_auth_mode" {
 output "github_app_id" {
   value = var.github_app_id
 }
+
+output "github_app_setup" {
+  description = "Non-sensitive settings for creating the GitHub App."
+  value = {
+    owner          = var.github_owner
+    secret_prefix  = var.service_name
+    repository_url = "https://github.com/${var.github_owner}/${var.deploy_repository}"
+  }
+}

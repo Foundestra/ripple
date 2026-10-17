@@ -21,6 +21,7 @@ need() { command -v "$1" >/dev/null || { echo "✖ $1 is required"; exit 1; }; }
 need gcloud
 need terraform
 need curl
+need python3
 [[ -f terraform.tfvars ]] || { echo "✖ copy terraform.tfvars.example to terraform.tfvars and fill it in"; exit 1; }
 
 PROJECT=$(sed -nE 's/^project_id[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' terraform.tfvars)
@@ -35,7 +36,14 @@ terraform init -input=false -backend-config="bucket=${PROJECT}-ripple-tfstate" >
 echo "✔ terraform initialised"
 
 # 2. Foundations
-terraform apply -input=false -auto-approve -var deploy_service=false
+TF_RESOURCES=$(terraform state list)
+if [[ "$TF_RESOURCES" == *'google_cloud_run_v2_service.ripple[0]'* ]]; then
+  # Refresh outputs from the current variables without changing live resources.
+  terraform apply -refresh-only -input=false -auto-approve
+  echo "✔ existing Cloud Run service detected; preserving it during foundations"
+else
+  terraform apply -input=false -auto-approve -var deploy_service=false
+fi
 IMAGE=$(terraform output -raw bootstrap_image)
 MODE=$(terraform output -raw github_auth_mode)
 APP_ID=$(terraform output -raw github_app_id)
@@ -52,7 +60,7 @@ else
 fi
 
 # 4. Secrets must have a value before Cloud Run can reference them
-has_version() { [[ -n "$(gcloud secrets versions list "$1" --project "$PROJECT" --filter='state=ENABLED' --limit=1 --format='value(name)' 2>/dev/null)" ]]; }
+has_version() { [[ "$(gcloud secrets versions describe latest --secret "$1" --project "$PROJECT" --format='value(state)' 2>/dev/null)" == ENABLED ]]; }
 SECRET_GEMINI=$(terraform output -json secret_ids | python3 -c 'import sys,json;print(json.load(sys.stdin)["gemini_api_key"])')
 if ! has_version "$SECRET_GEMINI"; then
   cat <<EOF
@@ -67,13 +75,19 @@ EOF
 fi
 echo "✔ Gemini API key present"
 WEBHOOK_URL=$(terraform output -raw webhook_url)
+APP_SETUP=$(terraform output -json github_app_setup)
+APP_OWNER=$(printf '%s' "$APP_SETUP" | python3 -c 'import sys,json;print(json.load(sys.stdin)["owner"])')
+SECRET_PREFIX=$(printf '%s' "$APP_SETUP" | python3 -c 'import sys,json;print(json.load(sys.stdin)["secret_prefix"])')
+REPO_URL=$(printf '%s' "$APP_SETUP" | python3 -c 'import sys,json;print(json.load(sys.stdin)["repository_url"])')
 if [[ "$MODE" == "app" ]]; then
   if ! has_version "$SECRET_APP_KEY" || [[ -z "$APP_ID" ]]; then
     cat <<EOF
 
 ⏸  GitHub App not set up yet. Create it (opens GitHub in your browser, stores the key in Secret Manager):
 
-    node infra/github/create-app.mjs --owner <github user or org> --webhook-url $WEBHOOK_URL --project $PROJECT
+    node infra/github/create-app.mjs --owner "$APP_OWNER" --repo-url "$REPO_URL" --secret-prefix "$SECRET_PREFIX" --webhook-url "$WEBHOOK_URL" --project "$PROJECT"
+
+    Add --org if "$APP_OWNER" is a GitHub organization.
 
 Then put the printed App ID into terraform.tfvars as github_app_id, install the App on the
 repository Ripple should review, and run this script again.
@@ -100,13 +114,17 @@ terraform apply -input=false -auto-approve
 URL=$(terraform output -raw service_url)
 
 # 6. Smoke test
-echo "▶ waiting for $URL/healthz"
+echo "▶ waiting for $URL/api/status"
+HEALTH_OK=false
 for _ in $(seq 1 30); do
-  if curl -fsS "$URL/healthz" >/dev/null 2>&1; then break; fi
+  if curl --connect-timeout 5 --max-time 10 -fsS "$URL/api/status" >/dev/null 2>&1; then
+    HEALTH_OK=true
+    break
+  fi
   sleep 5
 done
-curl -fsS "$URL/healthz" && echo
-curl -fsS "$URL/api/status" | python3 -c 'import sys,json;s=json.load(sys.stdin);print("  graph:",s["graph"]["source"],"(mock)" if s["graph"].get("mock") else "","| llm:",s["llm"],"| github:",s["github"]["mode"])'
+[[ "$HEALTH_OK" == true ]] || { echo "✖ service did not become healthy at $URL/api/status"; exit 1; }
+curl --connect-timeout 5 --max-time 10 -fsS "$URL/api/status" | python3 -c 'import sys,json;s=json.load(sys.stdin);print("  graph:",s["graph"]["source"],"(mock)" if s["graph"].get("mock") else "","| llm:",s["llm"],"| github:",s["github"]["mode"])'
 
 cat <<EOF
 

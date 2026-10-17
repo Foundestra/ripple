@@ -9,15 +9,16 @@ BUCKET="${PROJECT}-ripple-tfstate"
 
 if gcloud storage buckets describe "gs://${BUCKET}" --project "$PROJECT" >/dev/null 2>&1; then
   echo "State bucket gs://${BUCKET} already exists"
-  exit 0
+else
+  gcloud storage buckets create "gs://${BUCKET}" \
+    --project "$PROJECT" \
+    --location "$REGION" \
+    --uniform-bucket-level-access \
+    --public-access-prevention
 fi
 
-gcloud storage buckets create "gs://${BUCKET}" \
-  --project "$PROJECT" \
-  --location "$REGION" \
-  --uniform-bucket-level-access \
-  --public-access-prevention
-gcloud storage buckets update "gs://${BUCKET}" --versioning
+gcloud storage buckets update "gs://${BUCKET}" \
+  --versioning --uniform-bucket-level-access --public-access-prevention
 
-echo "Created gs://${BUCKET} (versioned, uniform access, public access prevented)."
+echo "State bucket gs://${BUCKET} configured (versioned, uniform access, public access prevented)."
 echo "It will hold secrets in Terraform state: grant access only to the people who deploy."

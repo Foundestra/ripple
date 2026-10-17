@@ -4,10 +4,10 @@ project_id = "my-ripple-project"
 region     = "us-central1"
 
 # GitHub
-github_owner       = "tanmaycodes13"
+github_owner       = "your-github-user-or-org"
 watched_repository = "opentelemetry-demo" # the fork whose PRs Ripple reviews
 deploy_repository  = "ripple"             # Ripple's own repo (GitHub Actions deploys from it)
-deploy_branch      = "main"
+deploy_branch      = "main"               # must match the deploy repository default branch
 github_auth_mode   = "app"                # "app" (recommended) or "token"
 github_app_id      = ""                   # fill in after create-app.mjs, then re-apply
 manage_github      = false                # true = also set Actions variables (+ webhook in token mode)

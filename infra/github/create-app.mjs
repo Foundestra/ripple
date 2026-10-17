@@ -29,6 +29,7 @@ const { values } = parseArgs({
     org: { type: 'boolean', default: false },
     'webhook-url': { type: 'string' },
     name: { type: 'string', default: 'Ripple PR Risk' },
+    'repo-url': { type: 'string' },
     project: { type: 'string' },
     'secret-prefix': { type: 'string', default: 'ripple' },
     port: { type: 'string', default: '3456' },
@@ -36,7 +37,7 @@ const { values } = parseArgs({
 });
 
 if (!values.owner || !values['webhook-url']) {
-  console.error('usage: node infra/github/create-app.mjs --owner <user-or-org> [--org] --webhook-url <url> [--project <gcp-project>]');
+  console.error('usage: node infra/github/create-app.mjs --owner <user-or-org> [--org] --webhook-url <url> [--project <gcp-project>] [--repo-url <repository-url>] [--secret-prefix <service-name>]');
   process.exit(1);
 }
 
@@ -50,6 +51,7 @@ function buildManifest({ name, webhookUrl, redirectUrl }) {
   return {
     ...template,
     name,
+    url: values['repo-url'] || `${web}/${encodeURIComponent(values.owner)}/ripple`,
     hook_attributes: { ...template.hook_attributes, url: webhookUrl },
     redirect_url: redirectUrl,
   };

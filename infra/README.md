@@ -18,7 +18,7 @@ How Ripple is hosted, how it connects to GitHub, and how to deploy it with one s
  │ ripple repo      │  │  Secret Manager: gemini-api-key · github-webhook-secret ·            │
  │ push to main ────┼──┼─▶ GitHub Actions ──(OIDC → Workload Identity Federation)──▶          │
  │                  │  │      builds image → Artifact Registry → rolls out Cloud Run          │
- └──────────────────┘  │  Cloud Monitoring uptime check on /healthz → email alert             │
+ └──────────────────┘  │  Cloud Monitoring uptime check on /api/status → email alert             │
                        └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -34,9 +34,9 @@ How Ripple is hosted, how it connects to GitHub, and how to deploy it with one s
 | Public access | `allUsers` → `roles/run.invoker` | GitHub must reach `/webhook/github`. Every webhook is authenticated by Ripple itself with an HMAC-SHA256 signature; unsigned or mis-signed requests get `401`. |
 | Secrets | **Secret Manager**, mounted as env vars, `latest` version | Gemini key, webhook secret, GitHub App private key (or token). Only the runtime service account can read them. |
 | Images | **Artifact Registry** (`<region>-docker.pkg.dev/<project>/ripple-images/ripple`) | Tagged with the git SHA; cleanup keeps the latest 15. |
-| CI/CD | **GitHub Actions + Workload Identity Federation** | No JSON service-account keys anywhere. Only `<owner>/<ripple repo>` on `main` can obtain the deployer identity. |
+| CI/CD | **GitHub Actions + Workload Identity Federation** | No JSON service-account keys anywhere. Only `<owner>/<ripple repo>` on the configured `deploy_branch` can obtain the deployer identity. |
 | State | **GCS bucket** `<project>-ripple-tfstate` | Versioned, uniform access, public access prevented (it contains the generated secrets). |
-| Monitoring | **Uptime check** on `/healthz` every 5 min, optional email alert | Know if the webhook endpoint is down before a demo. |
+| Monitoring | **Uptime check** on `/api/status` every 5 min, optional email alert | Know if the webhook endpoint is down before a demo. |
 
 **The dashboard is public in this setup** (same service as the webhook). That's fine for a hackathon demo. For production, put the dashboard on a second Cloud Run service behind IAP and keep only the webhook public.
 
@@ -105,12 +105,12 @@ With `manage_github = true`, Terraform also creates the repository webhook (poin
 
 ### Deploying from GitHub (CI/CD)
 
-`.github/workflows/deploy.yml` runs on every push to `main`:
+`.github/workflows/deploy.yml` tests pushes and deploys the repository default branch:
 1. `npm test`.
 2. Authenticate to Google Cloud with **OIDC → Workload Identity Federation** (`google-github-actions/auth`).
 3. `docker build` and push `…/ripple:<sha>`.
 4. `gcloud run services update ripple --container ripple --image … --container otel-mock --image …`.
-5. Run a `/healthz` smoke test.
+5. Run an `/api/status` smoke test.
 
 It reads repository **variables**: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOYER_SA`, `GCP_IMAGE_REPO`, `GCP_RUN_SERVICE`. Terraform outputs them as `github_actions_variables` and sets them for you with `manage_github = true`.
 
@@ -123,7 +123,7 @@ The deployer identity can only push to the one Artifact Registry repository, dep
 **Prerequisites:**
 - A GCP project with billing enabled.
 - `gcloud`, logged in (`gcloud auth login && gcloud auth application-default login`).
-- Terraform ≥ 1.6, Node 20+, and owner (or equivalent) rights on the project.
+- Terraform ≥ 1.6, Node 20+, Python 3, curl, and sufficient deployment permissions on the project.
 
 ```bash
 cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars   # set project_id, github_owner, repos
@@ -139,9 +139,9 @@ The script is idempotent; re-run it after each pause.
 | 3 | `gcloud builds submit` builds the first image `…/ripple:bootstrap` | — |
 | 4 | Checks that the secrets have values. **Pauses** with instructions if the GitHub App or token is missing | Run `create-app.mjs`, install the App, set `github_app_id`, re-run |
 | 5 | `terraform apply`: Cloud Run service, public invoker, uptime check | — |
-| 6 | Smoke test: `/healthz` and `/api/status` (graph = mock, llm = gemini, github = app) | Open a PR on the watched repo |
+| 6 | Smoke test: `/api/status` (graph = mock, llm = gemini, github = app) | Open a PR on the watched repo |
 
-Then, for push-to-deploy, set the Actions variables on the Ripple repo, or re-apply with `manage_github = true` and `GITHUB_TOKEN` exported. The deploy workflow only runs from `main` of `deploy_repository`.
+Then, for push-to-deploy, set the Actions variables on the Ripple repo, or re-apply with `manage_github = true` and `GITHUB_TOKEN` exported. The deploy workflow only deploys the default branch of `deploy_repository`; set `deploy_branch` in Terraform to that same branch.
 
 ## 5. Operating it
 
@@ -186,3 +186,24 @@ Not verified, because there were no GCP credentials or Docker daemon in the cont
 - Creating a real GitHub App.
 
 Expect the first `apply` to surface project-specific issues, such as org policies that block `allUsers` invokers or API key creation.
+
+## Credential and configuration hygiene
+
+Set `github_owner`, repository names, and `deploy_branch` explicitly in the ignored
+`terraform.tfvars`. Match `deploy_branch` to the deploy repository's default branch;
+the GitHub Actions workflow discovers that branch from the event metadata.
+
+When creating an organization-owned App, pass `--org`. For a renamed deploy
+repository, pass `--repo-url https://github.com/<owner>/<repository>`; pass
+`--secret-prefix` when using a custom Terraform `service_name`. Private Apps can
+only be installed in the account that owns them, so the watched repository must
+belong to that account.
+
+Local `.env` files, private keys, generated GitHub credentials, Terraform variable
+files, and state must stay out of Git and build uploads. The example files contain
+placeholders only; fake credentials in tests are test data. Cloud Build excludes
+the entire `infra/` directory. Generated Gemini keys and webhook secrets remain in
+Terraform state, so restrict access to the remote state bucket.
+
+Cloud Run reserves some public paths ending in `z`. Public uptime and deployment
+checks use `/api/status`; internal startup and liveness probes use `/healthz`.

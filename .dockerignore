@@ -7,3 +7,14 @@ docs
 data/runtime
 infra
 .github
+
+# Local credentials and generated authentication files.
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+gha-creds-*.json
+service-account*.json
+credentials.json
