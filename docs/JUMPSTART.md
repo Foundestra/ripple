@@ -39,7 +39,7 @@ This guide takes you from a fresh laptop to the complete Ripple demo, step by st
 ## 1. Get the code and check it works
 
 ```bash
-git clone https://github.com/tanmaycodes13/ripple.git
+git clone "https://github.com/<your-github-owner>/ripple.git"
 cd ripple
 git checkout claude/hackathon-product-pitch-v40oqj     # until it's merged
 npm install

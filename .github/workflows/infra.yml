@@ -1,0 +1,28 @@
+# Format and validate the Terraform on every PR that touches it.
+# (Plans and applies run from a deployer's machine via infra/scripts/deploy.sh.)
+name: infra
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+      - name: Shell scripts parse
+        working-directory: infra/scripts
+        run: for f in *.sh; do bash -n "$f"; done
