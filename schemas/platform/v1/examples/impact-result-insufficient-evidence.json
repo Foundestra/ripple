@@ -1,0 +1,110 @@
+{
+  "schema_version": "ripple.impact-result.v1",
+  "work_item_id": "jira://demo/PAY-142",
+  "repository": "repository://demo/opentelemetry-demo",
+  "pr_number": 103,
+  "commit_sha": null,
+  "evaluation_at": "2026-11-14T09:00:00.000Z",
+  "request_context_sha256": "b83b54f03effe60c687c04aa593d0efac967587f2b407f70e6fbf68bd58fb29d",
+  "versions": {
+    "registry_version": null,
+    "registry_sha256": null,
+    "snapshot_id": null,
+    "graph_version": null,
+    "policy_version": null,
+    "policy_sha256": null,
+    "snapshot_sha256": null
+  },
+  "bounds": {
+    "depth": 1,
+    "max_nodes": 250,
+    "max_edges_per_direction": 100,
+    "max_ms": 2000,
+    "max_evidence_bytes": 262144,
+    "max_references": 100,
+    "returned_nodes": 0,
+    "elapsed_ms": 12,
+    "retained_evidence_bytes": 512,
+    "truncated": false,
+    "truncation_reason": [],
+    "unexplored_frontier": []
+  },
+  "summary": {
+    "direct_tiers": [],
+    "highest_known_tier": null,
+    "critical_hard_consumers": [],
+    "hard_paths": 0,
+    "soft_paths": 0,
+    "unknown_paths": 0,
+    "required_evidence_gaps": [
+      "COMMIT_IDENTITY_MISSING",
+      "VERSION_BINDINGS_MISSING"
+    ]
+  },
+  "unknowns": [
+    "COMMIT_IDENTITY_MISSING"
+  ],
+  "analysis_status": "insufficient_evidence",
+  "risk_classification": "UNKNOWN",
+  "shadow_decision": {
+    "schema_version": "ripple.shadow-decision.v1",
+    "risk_classification": "UNKNOWN",
+    "analysis_status": "insufficient_evidence",
+    "outcome": "would_lock",
+    "eligibility": "ineligible",
+    "authorization": {
+      "status": "not_evaluated",
+      "authorization_id": null
+    },
+    "reason_codes": [
+      "INVALID_COMMIT_IDENTITY"
+    ],
+    "required_controls": [],
+    "satisfied_controls": [],
+    "missing_controls": [],
+    "policy_version": "policy://platform-shadow@1.0.0#sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "evidence_refs": [],
+    "evaluation_at": "2026-11-14T09:00:00.000Z",
+    "valid_until": "2026-11-14T10:00:00.000Z",
+    "reevaluation": {
+      "required_after": "2026-11-14T10:00:00.000Z",
+      "reasons": [
+        "EVIDENCE_FRESHNESS_BOUNDARY"
+      ]
+    },
+    "human_action": "Provide a full commit SHA and rerun analysis; no eligibility was issued.",
+    "decision_id": "decision://sha256:cc80a44a35cef3f8d07129200c44a5e2768db0a8e36bea6035acac45ab3fbc71"
+  },
+  "legacy_risk": {
+    "authority": "none",
+    "use": "display_only",
+    "level": null,
+    "score": null,
+    "factors": []
+  },
+  "human_action": "Provide a full commit SHA and rerun analysis; no eligibility was issued.",
+  "assessment_id": "assessment://sha256:1295c9d808d2674a0410131bb336424f9dcf94ef980daa6510fe9853305cadc6",
+  "replay_key": "90711a7a3ba5c7e53a3ff743a076e1f3f038564f644fec91ef5498eec658f1a2",
+  "resolution": [],
+  "direct_services": [],
+  "upstream": [],
+  "downstream": [],
+  "coverage": [
+    {
+      "adapter": "demo_graph",
+      "signal": "dependency",
+      "status": "mock",
+      "observed_from": "2026-11-14T08:55:00.000Z",
+      "observed_until": "2026-11-14T08:55:00.000Z",
+      "freshness": "fresh",
+      "limit": 2500,
+      "truncated": false,
+      "errors": [],
+      "unknowns": [
+        "PRODUCTION_COVERAGE_UNAVAILABLE"
+      ]
+    }
+  ],
+  "created_at": "2026-11-14T09:00:00.000Z",
+  "valid_until": "2026-11-14T10:00:00.000Z"
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "ripple.impact-request.v1",
+  "work_item_id": "jira://demo/PAY-142",
+  "repository": "repository://demo/opentelemetry-demo",
+  "pr_number": 103,
+  "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+  "evaluation_at": "2026-11-14T09:00:00.000Z",
+  "files": [
+    {
+      "path": "pb/demo.proto",
+      "status": "modified",
+      "contract_symbols": [
+        "ChargeResponse"
+      ]
+    }
+  ],
+  "request_context": {
+    "source": "demo_fixture",
+    "fixture_id": "pr3"
+  }
+}
