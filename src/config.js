@@ -47,6 +47,22 @@ export function loadConfig() {
 
     postgresUrl: env('DATABASE_URL', ''),
 
+    platform: {
+      mode: env('RIPPLE_PLATFORM_MODE', 'off'), // off | demo; operational intentionally fails closed
+      manifestPath: path.join(ROOT, 'data', 'platform', 'demo', 'registry.yaml'),
+      policyPath: path.join(ROOT, 'policy', 'platform-shadow-v1.yaml'),
+      maxBodyBytes: Math.min(num('RIPPLE_PLATFORM_MAX_BODY_BYTES', 256 * 1024), 256 * 1024),
+      maxFiles: Math.min(num('RIPPLE_PLATFORM_MAX_FILES', 100), 100),
+      maxPathBytes: Math.min(num('RIPPLE_PLATFORM_MAX_PATH_BYTES', 1024), 1024),
+      maxResultBytes: Math.min(num('RIPPLE_PLATFORM_MAX_RESULT_BYTES', 1024 * 1024), 1024 * 1024),
+      maxHistory: Math.min(num('RIPPLE_PLATFORM_MAX_HISTORY', 100), 100),
+      maxMs: Math.min(num('RIPPLE_PLATFORM_MAX_MS', 2000), 2000),
+      maxNodes: Math.min(num('RIPPLE_PLATFORM_MAX_NODES', 250), 250),
+      maxEdgesPerDirection: Math.min(num('RIPPLE_PLATFORM_MAX_EDGES_PER_DIRECTION', 100), 100),
+      maxEvidenceBytes: Math.min(num('RIPPLE_PLATFORM_MAX_EVIDENCE_BYTES', 256 * 1024), 256 * 1024),
+      maxReferences: Math.min(num('RIPPLE_PLATFORM_MAX_REFERENCES', 100), 100),
+    },
+
     planning: {
       source: env('RIPPLE_PLANNING_SOURCE', 'seeded'), // seeded | jira
       jiraUrl: env('JIRA_URL', ''),
