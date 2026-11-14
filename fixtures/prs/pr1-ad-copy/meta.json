@@ -7,5 +7,11 @@
   "base": "main",
   "author": "lucia-growth",
   "ci": { "state": "success", "summary": "4/4 checks passed" },
-  "demo": { "expected": "low", "moment": "Comment lands in seconds; nothing to see is the point." }
+  "demo": { "expected": "low", "moment": "Comment lands in seconds; nothing to see is the point." },
+  "platform": {
+    "repository_id": "repository://demo/opentelemetry-demo",
+    "commit_sha": "01f4001b500fdfb117ff480ed32bb92c61c2b130",
+    "commit_identity": "synthetic_demo_identity",
+    "live_github_verified": false
+  }
 }

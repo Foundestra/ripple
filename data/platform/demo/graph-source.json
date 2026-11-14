@@ -1,0 +1,666 @@
+{
+  "schema_version": "ripple.graph-source.v1",
+  "source_id": "graph-source://demo/astronomy-shop",
+  "scope": "demo",
+  "authority": "seeded_mock",
+  "version": "1.0.0",
+  "source_version": "data/graph-snapshot.json@2026-09-26T18:00:00Z",
+  "source_sha256": "c47d0e44ed90b6172500b038bcb8727371fc8fb520e18bc15064bb88ae617ec4",
+  "registry_id": "registry://demo/astronomy-shop",
+  "environment": "demo",
+  "source_direction": "Seeded from/to is caller-or-channel to callee-or-consumer. canonical_direction records the normalized producer/consumer orientation.",
+  "coverage": {
+    "validation_status": "validated_partial",
+    "included_sources": [
+      "data/graph-snapshot.json",
+      "data/catalog.yaml#manual_edges"
+    ],
+    "production_complete": false,
+    "truncated": false,
+    "unknowns": [
+      "Seeded observations are not live telemetry.",
+      "Protocol and rates do not validate scenario failure behavior.",
+      "Services absent from these sources may still have dependencies."
+    ]
+  },
+  "edges": [
+    {
+      "observation_id": "observation://demo/seeded-graph/01",
+      "from": "load-generator",
+      "to": "frontend-proxy",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "load-generator",
+        "to": "frontend-proxy",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 1180,
+      "error_rate": 0.002,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/01"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/01"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/02",
+      "from": "frontend-proxy",
+      "to": "frontend",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend-proxy",
+        "to": "frontend",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 1165,
+      "error_rate": 0.002,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/02"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/02"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/03",
+      "from": "frontend",
+      "to": "ad",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "ad",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 212,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/03"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/03"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/04",
+      "from": "frontend",
+      "to": "cart",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "cart",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 318,
+      "error_rate": 0.001,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/04"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/04"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/05",
+      "from": "frontend",
+      "to": "checkout",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "checkout",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/05"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/05"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/06",
+      "from": "frontend",
+      "to": "currency",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "currency",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 402,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/06"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/06"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/07",
+      "from": "frontend",
+      "to": "product-catalog",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "product-catalog",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 655,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/07"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/07"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/08",
+      "from": "frontend",
+      "to": "recommendation",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "recommendation",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 208,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/08"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/08"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/09",
+      "from": "frontend",
+      "to": "shipping",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "frontend",
+        "to": "shipping",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 96,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/09"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/09"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/10",
+      "from": "checkout",
+      "to": "cart",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "cart",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 82,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/10"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/10"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/11",
+      "from": "checkout",
+      "to": "currency",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "currency",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 120,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/11"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/11"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/12",
+      "from": "checkout",
+      "to": "email",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "email",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/12"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/12"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/13",
+      "from": "checkout",
+      "to": "payment",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "payment",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/13"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/13"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/14",
+      "from": "checkout",
+      "to": "product-catalog",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "product-catalog",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 98,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/14"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/14"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/15",
+      "from": "checkout",
+      "to": "shipping",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "shipping",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 82,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/15"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/15"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/16",
+      "from": "checkout",
+      "to": "kafka",
+      "relationship_type": "PUBLISHES_TO",
+      "canonical_direction": {
+        "from": "checkout",
+        "to": "kafka",
+        "transform": "identity"
+      },
+      "protocol": "kafka",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/16"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/16"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/17",
+      "from": "kafka",
+      "to": "accounting",
+      "relationship_type": "CONSUMES_FROM",
+      "canonical_direction": {
+        "from": "accounting",
+        "to": "kafka",
+        "transform": "reverse_seed_channel_delivery_to_consumer"
+      },
+      "protocol": "kafka",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/17"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/17"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/18",
+      "from": "kafka",
+      "to": "fraud-detection",
+      "relationship_type": "CONSUMES_FROM",
+      "canonical_direction": {
+        "from": "fraud-detection",
+        "to": "kafka",
+        "transform": "reverse_seed_channel_delivery_to_consumer"
+      },
+      "protocol": "kafka",
+      "calls_per_min": 41,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/18"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/18"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/19",
+      "from": "recommendation",
+      "to": "product-catalog",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "recommendation",
+        "to": "product-catalog",
+        "transform": "identity"
+      },
+      "protocol": "grpc",
+      "calls_per_min": 208,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/19"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/19"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/20",
+      "from": "shipping",
+      "to": "quote",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "shipping",
+        "to": "quote",
+        "transform": "identity"
+      },
+      "protocol": "http",
+      "calls_per_min": 178,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/20"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/20"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/seeded-graph/21",
+      "from": "cart",
+      "to": "valkey-cart",
+      "relationship_type": "CALLS",
+      "canonical_direction": {
+        "from": "cart",
+        "to": "valkey-cart",
+        "transform": "identity"
+      },
+      "protocol": "redis",
+      "calls_per_min": 640,
+      "error_rate": 0,
+      "observed_at": "2026-09-26T18:00:00Z",
+      "evidence_status": "observed_demo",
+      "evidence_refs": [
+        "evidence://demo/seeded-graph/21"
+      ],
+      "source_reference": "data/graph-snapshot.json",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "Seeded protocol and traffic rates do not validate failure behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/21"
+        ]
+      }
+    },
+    {
+      "observation_id": "observation://demo/catalog-manual/01",
+      "from": "accounting",
+      "to": "postgresql",
+      "relationship_type": "WRITES_TO",
+      "canonical_direction": {
+        "from": "accounting",
+        "to": "postgresql",
+        "transform": "identity"
+      },
+      "protocol": "sql",
+      "observed_at": null,
+      "evidence_status": "declared_demo",
+      "evidence_refs": [
+        "evidence://demo/catalog-manual/01"
+      ],
+      "source_reference": "data/catalog.yaml",
+      "source_reason": "Asserted by @astro-shop/finance-eng; ledger writes are not traced in all environments",
+      "behavior": {
+        "classification": "unknown",
+        "operation": "unspecified",
+        "failure_mode": "unavailable",
+        "basis": "A catalog declaration establishes a relation, not validated scenario behavior.",
+        "evidence_refs": [
+          "evidence://demo/catalog-manual/01"
+        ]
+      }
+    }
+  ],
+  "unresolved_observations": []
+}

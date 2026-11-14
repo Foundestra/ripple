@@ -1,0 +1,847 @@
+schema_version: ripple.registry.v1
+registry_id: registry://demo/astronomy-shop
+scope: demo
+authority: demo_only
+version: 1.0.0
+source_sha256: 633371a90757f40a2fc29b0ac6587c30a7a7a7f6ec10a0114e3dba61c7bcf96e
+source_references:
+  - path: data/catalog.yaml
+    status: declared_demo
+  - path: data/graph-snapshot.json
+    status: seeded_mock
+repositories:
+  - id: repository://demo/opentelemetry-demo
+    scope: demo
+    aliases:
+      - type: github
+        value: demo/opentelemetry-demo
+        status: declared
+    fallback:
+      behavior: unresolved
+      service_ids: []
+services:
+  - id: service://astronomy-shop/frontend-proxy
+    lifecycle: active
+    kind: proxy
+    description: Envoy ingress in front of the storefront
+    aliases:
+      - type: catalog_name
+        value: frontend-proxy
+        status: declared
+      - type: seeded_graph_name
+        value: frontend-proxy
+        status: declared
+      - type: otel_service_name
+        value: frontend-proxy
+        status: unresolved
+    owners:
+      - team: "@astro-shop/edge"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - mara-edge
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/frontend
+    lifecycle: active
+    kind: service
+    description: Next.js storefront and BFF
+    aliases:
+      - type: catalog_name
+        value: frontend
+        status: declared
+      - type: seeded_graph_name
+        value: frontend
+        status: declared
+      - type: otel_service_name
+        value: frontend
+        status: unresolved
+    owners:
+      - team: "@astro-shop/storefront"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - jonas-web
+      - aiko-web
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/checkout
+    lifecycle: active
+    kind: service
+    description: Orchestrates order placement (cart, payment, shipping, email)
+    aliases:
+      - type: catalog_name
+        value: checkout
+        status: declared
+      - type: seeded_graph_name
+        value: checkout
+        status: declared
+      - type: otel_service_name
+        value: checkout
+        status: unresolved
+    owners:
+      - team: "@astro-shop/checkout"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - devi-checkout
+      - sam-checkout
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/payment
+    lifecycle: active
+    kind: service
+    description: Charges credit cards; returns a transaction id to checkout
+    aliases:
+      - type: catalog_name
+        value: payment
+        status: declared
+      - type: seeded_graph_name
+        value: payment
+        status: declared
+      - type: otel_service_name
+        value: payment
+        status: unresolved
+    owners:
+      - team: "@astro-shop/payments"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - priya-payments
+      - leo-payments
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/cart
+    lifecycle: active
+    kind: service
+    description: Shopping cart, backed by Valkey
+    aliases:
+      - type: catalog_name
+        value: cart
+        status: declared
+      - type: seeded_graph_name
+        value: cart
+        status: declared
+      - type: otel_service_name
+        value: cart
+        status: unresolved
+    owners:
+      - team: "@astro-shop/cart"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - tomas-cart
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/valkey-cart
+    lifecycle: active
+    kind: cache
+    description: Valkey instance holding carts
+    aliases:
+      - type: catalog_name
+        value: valkey-cart
+        status: declared
+      - type: seeded_graph_name
+        value: valkey-cart
+        status: declared
+      - type: otel_service_name
+        value: valkey-cart
+        status: unresolved
+    owners:
+      - team: "@astro-shop/cart"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - tomas-cart
+    tier:
+      value: 1
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/product-catalog
+    lifecycle: active
+    kind: service
+    description: Product data used by storefront, checkout and recommendations
+    aliases:
+      - type: catalog_name
+        value: product-catalog
+        status: declared
+      - type: seeded_graph_name
+        value: product-catalog
+        status: declared
+      - type: otel_service_name
+        value: product-catalog
+        status: unresolved
+    owners:
+      - team: "@astro-shop/catalog"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - ines-catalog
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/currency
+    lifecycle: active
+    kind: service
+    description: Currency conversion
+    aliases:
+      - type: catalog_name
+        value: currency
+        status: declared
+      - type: seeded_graph_name
+        value: currency
+        status: declared
+      - type: otel_service_name
+        value: currency
+        status: unresolved
+    owners:
+      - team: "@astro-shop/payments"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - leo-payments
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/shipping
+    lifecycle: active
+    kind: service
+    description: Shipping quotes and tracking ids
+    aliases:
+      - type: catalog_name
+        value: shipping
+        status: declared
+      - type: seeded_graph_name
+        value: shipping
+        status: declared
+      - type: otel_service_name
+        value: shipping
+        status: unresolved
+    owners:
+      - team: "@astro-shop/fulfilment"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - kwame-fulfil
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/quote
+    lifecycle: active
+    kind: service
+    description: Calculates shipping cost
+    aliases:
+      - type: catalog_name
+        value: quote
+        status: declared
+      - type: seeded_graph_name
+        value: quote
+        status: declared
+      - type: otel_service_name
+        value: quote
+        status: unresolved
+    owners:
+      - team: "@astro-shop/fulfilment"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - kwame-fulfil
+    tier:
+      value: 3
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/recommendation
+    lifecycle: active
+    kind: service
+    description: Product recommendations ("you may also like")
+    aliases:
+      - type: catalog_name
+        value: recommendation
+        status: declared
+      - type: seeded_graph_name
+        value: recommendation
+        status: declared
+      - type: otel_service_name
+        value: recommendation
+        status: unresolved
+    owners:
+      - team: "@astro-shop/discovery"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - nadia-discovery
+      - ravi-discovery
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/ad
+    lifecycle: active
+    kind: service
+    description: Contextual ads on product pages
+    aliases:
+      - type: catalog_name
+        value: ad
+        status: declared
+      - type: seeded_graph_name
+        value: ad
+        status: declared
+      - type: otel_service_name
+        value: ad
+        status: unresolved
+    owners:
+      - team: "@astro-shop/growth"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - lucia-growth
+    tier:
+      value: 3
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/email
+    lifecycle: active
+    kind: service
+    description: Order confirmation emails
+    aliases:
+      - type: catalog_name
+        value: email
+        status: declared
+      - type: seeded_graph_name
+        value: email
+        status: declared
+      - type: otel_service_name
+        value: email
+        status: unresolved
+    owners:
+      - team: "@astro-shop/fulfilment"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - kwame-fulfil
+    tier:
+      value: 3
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/kafka
+    lifecycle: active
+    kind: queue
+    description: Order events topic
+    aliases:
+      - type: catalog_name
+        value: kafka
+        status: declared
+      - type: seeded_graph_name
+        value: kafka
+        status: declared
+      - type: otel_service_name
+        value: kafka
+        status: unresolved
+    owners:
+      - team: "@astro-shop/platform"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - oli-platform
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/accounting
+    lifecycle: active
+    kind: service
+    description: Consumes order events and books them
+    aliases:
+      - type: catalog_name
+        value: accounting
+        status: declared
+      - type: seeded_graph_name
+        value: accounting
+        status: declared
+      - type: otel_service_name
+        value: accounting
+        status: unresolved
+    owners:
+      - team: "@astro-shop/finance-eng"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - hana-finance
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/fraud-detection
+    lifecycle: active
+    kind: service
+    description: Consumes order events and scores fraud
+    aliases:
+      - type: catalog_name
+        value: fraud-detection
+        status: declared
+      - type: seeded_graph_name
+        value: fraud-detection
+        status: declared
+      - type: otel_service_name
+        value: fraud-detection
+        status: unresolved
+    owners:
+      - team: "@astro-shop/risk"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - pavel-risk
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/postgresql
+    lifecycle: active
+    kind: database
+    description: Accounting ledger store
+    aliases:
+      - type: catalog_name
+        value: postgresql
+        status: declared
+      - type: seeded_graph_name
+        value: postgresql
+        status: declared
+      - type: otel_service_name
+        value: postgresql
+        status: unresolved
+    owners:
+      - team: "@astro-shop/platform"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - oli-platform
+    tier:
+      value: 2
+      source: demo_manifest
+      authority: demo_only
+  - id: service://astronomy-shop/load-generator
+    lifecycle: active
+    kind: synthetic
+    description: Locust traffic; excluded from blast radius
+    aliases:
+      - type: catalog_name
+        value: load-generator
+        status: declared
+      - type: seeded_graph_name
+        value: load-generator
+        status: declared
+      - type: otel_service_name
+        value: load-generator
+        status: unresolved
+    owners:
+      - team: "@astro-shop/platform"
+        source: demo_manifest
+        authority: demo_only
+    contacts:
+      - oli-platform
+    tier:
+      value: 3
+      source: demo_manifest
+      authority: demo_only
+components:
+  - id: component://demo/opentelemetry-demo/frontend-proxy
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/frontend-proxy
+    classification: service_source
+    path_rules:
+      - prefix: src/frontend-proxy/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/frontend
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/frontend
+    classification: service_source
+    path_rules:
+      - prefix: src/frontend/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/checkout
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/checkout
+    classification: service_source
+    path_rules:
+      - prefix: src/checkout/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - CheckoutService
+      - PlaceOrderRequest
+      - PlaceOrderResponse
+      - OrderResult
+  - id: component://demo/opentelemetry-demo/payment
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/payment
+    classification: service_source
+    path_rules:
+      - prefix: src/payment/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - PaymentService
+      - ChargeRequest
+      - ChargeResponse
+      - CreditCardInfo
+  - id: component://demo/opentelemetry-demo/cart
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/cart
+    classification: service_source
+    path_rules:
+      - prefix: src/cart/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - CartService
+      - CartItem
+      - AddItemRequest
+      - EmptyCartRequest
+      - GetCartRequest
+      - Cart
+  - id: component://demo/opentelemetry-demo/valkey-cart
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/valkey-cart
+    classification: service_source
+    path_rules:
+      - prefix: src/valkey-cart/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/product-catalog
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/product-catalog
+    classification: service_source
+    path_rules:
+      - prefix: src/product-catalog/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - ProductCatalogService
+      - Product
+      - ListProductsResponse
+      - GetProductRequest
+      - SearchProductsRequest
+      - SearchProductsResponse
+  - id: component://demo/opentelemetry-demo/currency
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/currency
+    classification: service_source
+    path_rules:
+      - prefix: src/currency/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - CurrencyService
+      - Money
+      - GetSupportedCurrenciesResponse
+      - CurrencyConversionRequest
+  - id: component://demo/opentelemetry-demo/shipping
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/shipping
+    classification: service_source
+    path_rules:
+      - prefix: src/shipping/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - ShippingService
+      - GetQuoteRequest
+      - GetQuoteResponse
+      - ShipOrderRequest
+      - ShipOrderResponse
+      - Address
+  - id: component://demo/opentelemetry-demo/quote
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/quote
+    classification: service_source
+    path_rules:
+      - prefix: src/quote/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/recommendation
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/recommendation
+    classification: service_source
+    path_rules:
+      - prefix: src/recommendation/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - RecommendationService
+      - ListRecommendationsRequest
+      - ListRecommendationsResponse
+  - id: component://demo/opentelemetry-demo/ad
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/ad
+    classification: service_source
+    path_rules:
+      - prefix: src/ad/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - AdService
+      - AdRequest
+      - AdResponse
+      - Ad
+  - id: component://demo/opentelemetry-demo/email
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/email
+    classification: service_source
+    path_rules:
+      - prefix: src/email/
+        precedence: 100
+        classification: source
+    contract_symbols:
+      - EmailService
+      - SendOrderConfirmationRequest
+      - OrderItem
+  - id: component://demo/opentelemetry-demo/kafka
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/kafka
+    classification: service_source
+    path_rules:
+      - prefix: src/kafka/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/accounting
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/accounting
+    classification: service_source
+    path_rules:
+      - prefix: src/accounting/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/fraud-detection
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/fraud-detection
+    classification: service_source
+    path_rules:
+      - prefix: src/fraud-detection/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/postgresql
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/postgresql
+    classification: service_source
+    path_rules:
+      - prefix: src/postgresql/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/load-generator
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/load-generator
+    classification: service_source
+    path_rules:
+      - prefix: src/load-generator/
+        precedence: 100
+        classification: source
+    contract_symbols: []
+  - id: component://demo/opentelemetry-demo/shared-demo-proto
+    repository_id: repository://demo/opentelemetry-demo
+    service_ids:
+      - service://astronomy-shop/checkout
+      - service://astronomy-shop/payment
+      - service://astronomy-shop/cart
+      - service://astronomy-shop/product-catalog
+      - service://astronomy-shop/currency
+      - service://astronomy-shop/shipping
+      - service://astronomy-shop/recommendation
+      - service://astronomy-shop/ad
+      - service://astronomy-shop/email
+    classification: shared_contract
+    path_rules:
+      - prefix: pb/demo.proto
+        precedence: 200
+        classification: shared
+    contract_symbols:
+      - CheckoutService
+      - PlaceOrderRequest
+      - PlaceOrderResponse
+      - OrderResult
+      - PaymentService
+      - ChargeRequest
+      - ChargeResponse
+      - CreditCardInfo
+      - CartService
+      - CartItem
+      - AddItemRequest
+      - EmptyCartRequest
+      - GetCartRequest
+      - Cart
+      - ProductCatalogService
+      - Product
+      - ListProductsResponse
+      - GetProductRequest
+      - SearchProductsRequest
+      - SearchProductsResponse
+      - CurrencyService
+      - Money
+      - GetSupportedCurrenciesResponse
+      - CurrencyConversionRequest
+      - ShippingService
+      - GetQuoteRequest
+      - GetQuoteResponse
+      - ShipOrderRequest
+      - ShipOrderResponse
+      - Address
+      - RecommendationService
+      - ListRecommendationsRequest
+      - ListRecommendationsResponse
+      - AdService
+      - AdRequest
+      - AdResponse
+      - Ad
+      - EmailService
+      - SendOrderConfirmationRequest
+      - OrderItem
+    symbol_mappings:
+      - service_id: service://astronomy-shop/checkout
+        symbols:
+          - CheckoutService
+          - PlaceOrderRequest
+          - PlaceOrderResponse
+          - OrderResult
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/payment
+        symbols:
+          - PaymentService
+          - ChargeRequest
+          - ChargeResponse
+          - CreditCardInfo
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/cart
+        symbols:
+          - CartService
+          - CartItem
+          - AddItemRequest
+          - EmptyCartRequest
+          - GetCartRequest
+          - Cart
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/product-catalog
+        symbols:
+          - ProductCatalogService
+          - Product
+          - ListProductsResponse
+          - GetProductRequest
+          - SearchProductsRequest
+          - SearchProductsResponse
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/currency
+        symbols:
+          - CurrencyService
+          - Money
+          - GetSupportedCurrenciesResponse
+          - CurrencyConversionRequest
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/shipping
+        symbols:
+          - ShippingService
+          - GetQuoteRequest
+          - GetQuoteResponse
+          - ShipOrderRequest
+          - ShipOrderResponse
+          - Address
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/recommendation
+        symbols:
+          - RecommendationService
+          - ListRecommendationsRequest
+          - ListRecommendationsResponse
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/ad
+        symbols:
+          - AdService
+          - AdRequest
+          - AdResponse
+          - Ad
+        status: declared
+        source: data/catalog.yaml
+      - service_id: service://astronomy-shop/email
+        symbols:
+          - EmailService
+          - SendOrderConfirmationRequest
+          - OrderItem
+        status: declared
+        source: data/catalog.yaml
+shared_contract_files:
+  - pb/demo.proto
+path_classifications:
+  generated:
+    - pattern: genproto/
+      match: contains_or_prefix
+    - pattern: _pb2.py
+      match: contains_or_prefix
+    - pattern: _pb2_grpc.py
+      match: contains_or_prefix
+    - pattern: .pb.go
+      match: contains_or_prefix
+  documentation:
+    - pattern: README.md
+      match: basename
+    - pattern: docs/
+      match: prefix
+  shared_contract:
+    - pattern: pb/demo.proto
+      match: exact
+unresolved_alias_types:
+  - type: kubernetes_workload
+    status: unresolved
+    reason: No Kubernetes identity fixture is available.
+  - type: datadog_service
+    status: unresolved
+    reason: No Datadog adapter or fixture is available.
+  - type: pagerduty_service
+    status: unresolved
+    reason: Incident data is seeded and has no PagerDuty service identity.
+  - type: deployment_unit
+    status: unresolved
+    reason: No deployment identity fixture is available.

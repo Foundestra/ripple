@@ -7,5 +7,11 @@
   "base": "main",
   "author": "priya-payments",
   "ci": { "state": "success", "summary": "5/5 checks passed" },
-  "demo": { "expected": "high", "moment": "Checkout depends on it via a hard edge, a past incident matches, and the diff doesn't match its Jira ticket." }
+  "demo": { "expected": "high", "moment": "Checkout depends on it via a hard edge, a past incident matches, and the diff doesn't match its Jira ticket." },
+  "platform": {
+    "repository_id": "repository://demo/opentelemetry-demo",
+    "commit_sha": "d5ef0f8f7b2773fd894951d06de077415648f97b",
+    "commit_identity": "synthetic_demo_identity",
+    "live_github_verified": false
+  }
 }

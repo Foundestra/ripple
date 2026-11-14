@@ -1,0 +1,219 @@
+{
+  "schema_version": "ripple.fixture-lineage.v1",
+  "fixture_id": "pr3",
+  "scope": "demo",
+  "authority": "synthetic_demo_only",
+  "source_sha256": "0232ec2eaddd0bbe54d72bc55cd7efaf7fc4fe244e1dca70ccc4976173dfb905",
+  "evaluation_at": "2026-11-14T09:00:00.000Z",
+  "bindings": {
+    "registry": {
+      "id": "registry://demo/astronomy-shop",
+      "version": "1.0.0",
+      "source_sha256": "633371a90757f40a2fc29b0ac6587c30a7a7a7f6ec10a0114e3dba61c7bcf96e"
+    },
+    "graph_source": {
+      "id": "graph-source://demo/astronomy-shop",
+      "version": "1.0.0",
+      "source_sha256": "c47d0e44ed90b6172500b038bcb8727371fc8fb520e18bc15064bb88ae617ec4",
+      "coverage": "partial"
+    },
+    "policy": {
+      "id": "policy://platform-shadow",
+      "version": "1.0.0",
+      "source_sha256": "ee727eb4a794dee37d5ecfb217bf1a79c6232a1bdd955629e3db5c0b0ab9c56e"
+    }
+  },
+  "steps": {
+    "jira_work_item": {
+      "id": "jira://demo/PAY-142",
+      "status": "declared_demo",
+      "source_reference": "data/jira/tickets.json",
+      "summary": "Add currency code to the charge response for refund reporting",
+      "acceptance": [
+        "ChargeResponse carries currency_code",
+        "Additive change only; no existing fields change"
+      ],
+      "live_jira_called": false
+    },
+    "agent_session": {
+      "status": "unknown",
+      "id": null,
+      "reason": "No agent event or session identity exists in the fixture."
+    },
+    "change_identity": {
+      "repository_id": "repository://demo/opentelemetry-demo",
+      "pull_request_number": 103,
+      "commit_sha": "d5ef0f8f7b2773fd894951d06de077415648f97b",
+      "commit_identity": "synthetic_demo_identity",
+      "live_github_verified": false,
+      "source_reference": "fixtures/prs/pr3-payment-contract/meta.json"
+    },
+    "changed_files": [
+      {
+        "path": "pb/demo.proto",
+        "status": "modified",
+        "facts": [
+          "reserves field 1",
+          "reserves transaction_id",
+          "adds charge_id field 2",
+          "adds currency_code field 3"
+        ],
+        "source_reference": "fixtures/prs/pr3-payment-contract/diff.patch"
+      },
+      {
+        "path": "src/payment/charge.js",
+        "status": "modified",
+        "facts": [
+          "renames transactionId to chargeId",
+          "returns chargeId and currencyCode"
+        ],
+        "source_reference": "fixtures/prs/pr3-payment-contract/diff.patch"
+      }
+    ],
+    "intent_comparison": {
+      "status": "conflicting_demo_claims",
+      "ticket_claim": "Additive change only; no existing fields change",
+      "diff_fact": "ChargeResponse.transaction_id is removed and reserved.",
+      "authority": "deterministic_fixture_diff"
+    },
+    "identity_resolution": [
+      {
+        "path": "src/payment/charge.js",
+        "component_ids": [
+          "component://demo/opentelemetry-demo/payment"
+        ],
+        "service_ids": [
+          "service://astronomy-shop/payment"
+        ],
+        "resolution": "exact_path_mapping",
+        "fallback_used": false
+      },
+      {
+        "path": "pb/demo.proto",
+        "component_ids": [
+          "component://demo/opentelemetry-demo/shared-demo-proto"
+        ],
+        "service_ids": [
+          "service://astronomy-shop/payment"
+        ],
+        "resolution": "shared_component",
+        "matched_symbols": [
+          "ChargeResponse"
+        ],
+        "fallback_used": false
+      }
+    ],
+    "unresolved_aliases": [
+      "otel_service_name",
+      "kubernetes_workload",
+      "deployment_unit",
+      "datadog_service",
+      "pagerduty_service"
+    ],
+    "graph_snapshot_candidate": {
+      "status": "validated_partial",
+      "environment": "demo",
+      "source": "seeded_mock",
+      "production_complete": false
+    },
+    "upstream": [
+      {
+        "path": [
+          "service://astronomy-shop/checkout",
+          "service://astronomy-shop/payment"
+        ],
+        "relationship_type": "CALLS",
+        "behavior": "unknown",
+        "reason": "Seeded protocol and traffic do not validate scenario-hard behavior.",
+        "evidence_refs": [
+          "evidence://demo/seeded-graph/13"
+        ]
+      }
+    ],
+    "downstream": {
+      "paths": [],
+      "coverage": "partial",
+      "known_absence": false,
+      "reason": "No payment outbound edge exists in the partial seeded source."
+    },
+    "ownership_and_tier": {
+      "service_id": "service://astronomy-shop/payment",
+      "owner": "@astro-shop/payments",
+      "tier": 1,
+      "authority": "demo_only",
+      "source": "demo_manifest"
+    },
+    "required_controls": [
+      {
+        "id": "payment-checkout-contract",
+        "status": "missing",
+        "source": "seeded_incident_rca"
+      },
+      {
+        "id": "human-review",
+        "status": "missing",
+        "source": "shadow_policy"
+      }
+    ],
+    "ci_observation": {
+      "status": "success",
+      "summary": "5/5 checks passed",
+      "authority_for_required_contract_control": false,
+      "reason": "Legacy fixture CI does not identify an authoritative payment-checkout contract test."
+    },
+    "incident_similarity": {
+      "incident_id": "INC-2031",
+      "status": "declared_demo",
+      "source_reference": "data/incidents/incidents.json",
+      "claim": "Historical similarity only; correlation is not causation."
+    },
+    "operational_context": {
+      "garden": {
+        "status": "unavailable",
+        "adapter": "pending"
+      },
+      "datadog": {
+        "status": "unavailable",
+        "adapter": "pending"
+      },
+      "runbook": {
+        "status": "unknown",
+        "adapter": "pending"
+      },
+      "pagerduty": {
+        "status": "unavailable",
+        "adapter": "missing"
+      }
+    },
+    "expected_policy_result": {
+      "analysis_status": "partial",
+      "risk_classification": "HIGH",
+      "reason_codes": [
+        "DIRECT_TIER_1",
+        "MANDATORY_CONTRACT_CHANGE"
+      ],
+      "outcome": "would_lock",
+      "eligibility": "ineligible",
+      "authorization": {
+        "status": "not_evaluated",
+        "authorization_id": null
+      },
+      "missing_controls": [
+        "payment-checkout-contract",
+        "human-review"
+      ],
+      "human_action": "Payments and checkout owners review the breaking contract change and missing contract test; no deploy authorization was issued."
+    },
+    "legacy_compatibility": {
+      "expected_level": "HIGH",
+      "authority": "none",
+      "use": "display_only",
+      "policy_input": false
+    },
+    "deployment_verification": {
+      "status": "not_applicable_not_deployed",
+      "deployment_id": null,
+      "production_verified": false
+    }
+  }
+}
