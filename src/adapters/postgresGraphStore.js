@@ -1,3 +1,4 @@
+import { pathEvidence } from '../core/dependencyEvidence.js';
 // Postgres-backed graph store. Keeps the dependency graph and catalog in Postgres
 // and answers blast-radius queries with a recursive CTE, so the query stays
 // bounded to a few hops regardless of how many services exist.
@@ -119,8 +120,7 @@ export class PostgresGraphStore {
           hops: r.hops,
           path: [edges[0].from, ...edges.map((x) => x.to)],
           edges,
-          evidence_complete: edges.every(e => e.failure_behavior !== 'unknown' && e.freshness === 'fresh'),
-          potential_impact: edges.some(e => e.failure_behavior === 'unknown') ? 'unknown' : r.all_hard ? 'may_break' : 'may_degrade',
+          ...pathEvidence(edges, r.all_hard),
           allHard: r.all_hard,
           impact: r.all_hard ? 'breaks' : 'degrades',
         };
