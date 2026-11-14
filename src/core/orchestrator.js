@@ -70,7 +70,9 @@ export class Orchestrator {
     ctx.headline = headline(ctx);
 
     const { results, trace: agentTrace } = await runAgents(ctx, this.llm, { onEvent });
-    const finalHeadline = results.narrator?.headline || ctx.headline;
+    const finalHeadline = codeSig.error
+      ? 'Incomplete dependency analysis. A human must review the missing evidence before merge.'
+      : results.narrator?.headline || ctx.headline;
 
     const graph = this.graphService.graph;
     const analysis = {
@@ -87,6 +89,11 @@ export class Orchestrator {
         signals: [planningSig, codeSig, buildSig].map((s) => ({ name: s.name, ms: s.ms, error: s.error || null })),
         gate: { ms: gateMs, level: gate.level, score: gate.score },
         agents: agentTrace,
+      },
+      dependency_evidence: {
+        ...graphServiceSummary(this.graphService.graph),
+        analysis_status: codeSig.error ? 'incomplete' : 'advisory',
+        lookup_error: codeSig.error || null,
       },
       sources: {
         graph: graph?.source,
@@ -131,3 +138,5 @@ function queryText(pr, change) {
     change.migrations.length ? 'migration schema' : '',
   ].join('\n');
 }
+
+function graphServiceSummary(graph) { return graph.evidenceSummary(); }

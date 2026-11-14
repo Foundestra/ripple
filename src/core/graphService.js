@@ -63,6 +63,9 @@ export class GraphService {
           source: res.source,
           capturedAt: res.capturedAt,
           mock: !!res.mock,
+          environment: this.config.graph.environment,
+          maxAgeSec: this.config.graph.maxAgeSec,
+          experimentMaxAgeSec: this.config.graph.experimentMaxAgeSec,
           stale: fellBack,
           error: fellBack ? this.attempts.map((a) => `${a.source}: ${a.error}`).join('; ') : null,
         });

@@ -196,3 +196,39 @@ scripts/                  full-demo.js, replay-webhook.js, create-demo-prs.sh
 - **Next:** real Jira and incident-tool adapters; static analysis to catch dependencies with no traffic yet.
 - **Then:** a learning loop, where post-merge incidents feed back to tune the risk weights.
 - **Later:** deploy-time gating, so a high-risk change can require a canary or a deploy lock.
+
+## Dependency evidence (schema version 1)
+
+The graph API and blast-radius paths now include `dependency_types`, `failure_behavior`,
+`confidence`, `freshness`, and `evidence`. Types are `runtime`, `shared_code`, `contract`,
+`data`, and `deployment`. Catalog `manual_edges` can declare several types:
+
+```yaml
+manual_edges:
+  - from: checkout
+    to: payment
+    dependency_types: [shared_code, contract]
+    reason: Generated client consumes the payment contract
+```
+
+These declarations can represent dependencies with no observed traffic. This release
+accepts explicit catalog declarations; it does not discover imports or contract consumers automatically.
+
+Legacy `kind` (`hard`/`soft`) remains a routing hypothesis for compatibility. It is **not**
+validated failure behavior. Protocol defaults and owner assertions keep `failure_behavior: unknown`.
+Only a fresh, recorded, non-sample experiment in the configured `RIPPLE_ENVIRONMENT`
+validates behavior. Mock telemetry and sample experiments never validate production behavior.
+`RIPPLE_ENVIRONMENT` defaults to `unknown`, which prevents cross-environment validation.
+
+Confidence is categorical, not a calibrated probability: `medium` means fresh real runtime
+observation; `high` requires an applicable experiment; otherwise it is `unknown`.
+Observation freshness and experiment freshness remain separate in the evidence list.
+Set `RIPPLE_EDGE_MAX_AGE_SEC` (default 3600) and `RIPPLE_EXPERIMENT_MAX_AGE_SEC`
+(default 604800) to control these windows.
+
+`/api/status` exposes a `dependency_evidence` summary; `/api/graph` includes
+`schema_version: 1` and `evidence_summary`. Analyses include the summary and explicitly
+mark dependency lookup failures as `incomplete`. PR comments disclose partial coverage
+and mock data. Risk scores and advisory GitHub checks remain unchanged in this release.
+No observed edge proves absence of a dependency; static discovery, commit-bound durable
+assessments, and automated test selection are follow-up work.
