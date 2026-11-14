@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundestra.dev/schemas/platform/v1/impact-history.schema.json",
+  "title": "Ripple Platform V1 bounded impact history envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "current", "history", "count", "limit"],
+  "properties": {
+    "schema_version": { "const": "ripple.impact-history.v1" },
+    "current": true,
+    "history": { "type": "array", "maxItems": 100, "items": true },
+    "count": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+  }
+}

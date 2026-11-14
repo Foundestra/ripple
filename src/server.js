@@ -12,7 +12,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 
 export async function startServer(overrides = {}) {
   const ripple = await createRipple(overrides);
-  const { config, graphService, orchestrator, catalog, llm, planning, incidentSource } = ripple;
+  const { config, graphService, orchestrator, catalog, llm, planning, incidentSource, platform } = ripple;
   const github = new GitHubClient(config.github);
   const log = overrides.log || console;
 
@@ -166,6 +166,12 @@ export async function startServer(overrides = {}) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     try {
+      if (platform && url.pathname.startsWith('/api/platform/v1/')) {
+        const result = await platform.router(req, url);
+        res.writeHead(result.status, result.headers);
+        res.end(result.body);
+        return;
+      }
       let handler = routes[`${req.method} ${url.pathname}`];
       let result;
       if (!handler && req.method === 'GET' && url.pathname.startsWith('/api/analyses/')) {
@@ -193,7 +199,8 @@ export async function startServer(overrides = {}) {
   const close = async () => {
     for (const c of clients) c.end();
     await new Promise((r) => server.close(r));
-    await graphService.stop();
+    try { await graphService.stop(); }
+    finally { await platform?.close(); }
   };
   return { server, port, close, ripple, catalog };
 }

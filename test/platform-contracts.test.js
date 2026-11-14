@@ -252,6 +252,6 @@ test('truncation and unknown evidence cannot be represented as LOW eligibility',
 test('stable API errors reject undocumented codes', () => {
   assertValid(schemas['api-error'], examples['api-error']);
   const undocumented = clone(examples['api-error']);
-  undocumented.error.code = 'INTERNAL_ERROR';
+  undocumented.error.code = 'DATABASE_ERROR';
   assert.match(validateSchema(schemas['api-error'], undocumented).join('\n'), /not in enum/);
 });

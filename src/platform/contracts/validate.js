@@ -72,7 +72,7 @@ export function validateSchema(schema, value, root = schema, at = '$') {
 }
 const schemas = new Map();
 export function validateContract(name, value) {
-  if (!['registry', 'graph-snapshot', 'impact-request', 'impact-result', 'shadow-decision', 'api-error'].includes(name)) throw new Error('Unknown platform contract');
+  if (!['registry', 'graph-snapshot', 'impact-request', 'impact-result', 'impact-history', 'shadow-decision', 'api-error'].includes(name)) throw new Error('Unknown platform contract');
   if (!schemas.has(name)) schemas.set(name, JSON.parse(readFileSync(new URL(`../../../schemas/platform/v1/${name}.schema.json`, import.meta.url), 'utf8')));
   canonicalJson(value);
   const errors = validateSchema(schemas.get(name), value);

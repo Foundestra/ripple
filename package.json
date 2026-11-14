@@ -20,7 +20,7 @@
     "analyze": "node src/cli.js analyze",
     "experiment": "node src/cli.js experiment",
     "webhook:replay": "node scripts/replay-webhook.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js test/platform/*.test.js"
   },
   "dependencies": {
     "marked": "^15.0.12",

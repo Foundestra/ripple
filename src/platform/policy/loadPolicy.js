@@ -1,0 +1,44 @@
+import fs from 'node:fs';
+import { parse } from 'yaml';
+import { contentHash, frozenCopy } from '../contracts/canonicalJson.js';
+import { validDateTime } from '../contracts/validate.js';
+
+const SUPPORTED_V1_POLICY = Object.freeze({
+  schema_version: 'ripple.shadow-policy.v1', policy_id: 'policy://platform-shadow', version: '1.0.0', scope: 'shadow_only',
+  deterministic_precedence: ['HIGH','MEDIUM','UNKNOWN','LOW'],
+  known_controls: [
+    { id: 'required-tests', authority_required: true },
+    { id: 'payment-checkout-contract', authority_required: true },
+    { id: 'human-review', authority_required: true },
+    { id: 'security-review', authority_required: true },
+    { id: 'migration-review', authority_required: true },
+    { id: 'compliance-review', authority_required: true },
+  ],
+  rules: {
+    HIGH: { any: ['direct_tier_1','tier_1_hard_consumer','destructive_change','security_change','mandatory_contract_change','mandatory_migration','conflicting_required_evidence'] },
+    MEDIUM: { when_no_higher_rule: true, any: ['direct_tier_2','tier_1_soft_consumer','important_evidence_unavailable_or_stale','multi_consumer_shared_component'] },
+    UNKNOWN: { when_no_higher_rule: true, any: ['required_identity_unresolved','required_tier_unresolved','dependency_direction_or_behavior_unresolved','commit_binding_unresolved','registry_or_snapshot_binding_unresolved','required_control_unresolved_or_missing','required_evidence_stale','traversal_truncated'] },
+    LOW: { when_no_higher_rule: true, all: ['direct_tiers_authoritatively_3_or_4','no_critical_hard_consumer','required_tests_authoritatively_passed','no_security_migration_or_compliance_signal','traversal_untruncated','required_evidence_complete_and_fresh'] },
+  },
+  decision: {
+    locked_classifications: ['HIGH','MEDIUM','UNKNOWN'],
+    lock_when: ['sox_or_compliance_signal','missing_required_control','analysis_not_complete'],
+    low_outcome: { outcome: 'would_allow_bypass', eligibility: 'eligible_for_bypass' },
+    locked_outcome: { outcome: 'would_lock', eligibility: 'ineligible' },
+    authorization: { status: 'not_evaluated', authorization_id: null },
+  },
+});
+const SUPPORTED_V1_SHA256 = contentHash(SUPPORTED_V1_POLICY);
+
+export function loadPolicy(input) {
+  const policy = typeof input === 'string' || input instanceof URL ? parse(fs.readFileSync(input, 'utf8')) : input;
+  if (policy?.schema_version !== 'ripple.shadow-policy.v1' || policy.scope !== 'shadow_only' ||
+      !/^\d+\.\d+\.\d+$/.test(policy.version || '') || !/^policy:\/\//.test(policy.policy_id || '')) throw new Error('Invalid shadow policy');
+  const { source_sha256, ...content } = policy;
+  const sha = contentHash(content);
+  if (source_sha256 !== sha) throw new Error('Shadow policy content hash mismatch');
+  if(policy.valid_until!==undefined && !validDateTime(policy.valid_until)) throw Object.assign(new Error('Invalid shadow policy valid_until'),{code:'UNSUPPORTED_POLICY_SEMANTICS'});
+  const {valid_until:_validity,...semantics}=content;
+  if (contentHash(semantics) !== SUPPORTED_V1_SHA256) throw Object.assign(new Error('Unsupported shadow policy semantics; only the fixed V1 rule bundle is executable'), { code: 'UNSUPPORTED_POLICY_SEMANTICS' });
+  return frozenCopy({ ...policy, policy_version: `${policy.policy_id}@${policy.version}#sha256:${sha}` });
+}

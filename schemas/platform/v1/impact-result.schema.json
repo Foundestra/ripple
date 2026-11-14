@@ -55,7 +55,11 @@
     "human_action": { "type": "string", "minLength": 1, "maxLength": 1024 },
     "created_at": { "type": "string", "format": "date-time" },
     "valid_until": { "type": "string", "format": "date-time" },
-    "replayed": { "type": "boolean" }
+    "replayed": { "type": "boolean" },
+    "current_eligibility": { "enum": ["eligible_for_bypass", "ineligible", "expired", "superseded", "invalidated_by_new_head", "invalidated_by_ambiguous_head"] },
+    "reevaluation_required": { "type": "boolean" },
+    "current_state_reasons": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+    "head_valid": { "type": "boolean" }
   },
   "$defs": {
     "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
@@ -145,6 +149,7 @@
         "observed_from": { "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
         "observed_until": { "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
         "freshness": { "enum": ["fresh", "stale", "unknown"] },
+        "valid_until": { "type": "string", "format": "date-time" },
         "limit": { "type": "integer", "minimum": 0, "maximum": 10000 },
         "truncated": { "type": "boolean" },
         "errors": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 512 } },
