@@ -48,6 +48,18 @@ test('unknown sources cannot create nodes and protocol cannot validate hard/soft
   const unsupported = snapshotFixture(registry, { edges });
   assert.throws(() => validateSnapshot(unsupported, registry), /Unvalidated/);
   assert.throws(() => validateSnapshot(snapshotFixture(registry, { nodes: [...first.nodes, { node_id: service('invented'), entity_type: 'service', tier: null, owners: [] }] }), registry), /unreviewed/);
+  const dangling = structuredClone(first.edges);
+  dangling[0].behavior.evidence_refs = ['evidence://fixture/missing'];
+  const invalid = snapshotFixture(registry, { edges: dangling });
+  assert.throws(() => validateSnapshot(invalid, registry), /Unresolved behavior evidence/);
+  assert.throws(() => queryNeighborhood(invalid, [service('payment')]), { code: 'NO_VALIDATED_SNAPSHOT' });
+});
+test('snapshot validity boundaries bind content identity', () => {
+  const registry = registryFixture();
+  const first = snapshotFixture(registry, { valid_until: '2026-11-14T09:10:00Z' });
+  const second = snapshotFixture(registry, { valid_until: '2026-11-14T09:20:00Z' });
+  assert.notEqual(first.snapshot_id, second.snapshot_id);
+  assert.equal(validateSnapshot(first, registry).valid_until, '2026-11-14T09:10:00Z');
 });
 test('one-hop traversal returns canonical upstream and downstream paths', () => {
   const result = queryNeighborhood(snapshotFixture(), [service('payment')]);

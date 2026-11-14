@@ -28,7 +28,10 @@ export function queryNeighborhood(snapshot, serviceIds, options = {}) {
         if (counts[direction] >= limits.max_edges_per_direction) { truncated(edge, direction, 'FANOUT_LIMIT'); continue; }
         if (!visited.has(other) && visited.size >= limits.max_nodes) { truncated(edge, direction, 'NODE_LIMIT'); continue; }
         const nextRefs = new Map(refs);
-        for (const ref of [...edge.source_refs, ...(edge.behavior.evidence_refs || [])]) nextRefs.set(ref, allEvidence.get(ref));
+        for (const ref of [...edge.source_refs, ...(edge.behavior.evidence_refs || [])]) {
+          if (!allEvidence.has(ref)) throw Object.assign(new Error('Snapshot has an unresolved evidence reference'), { code: 'NO_VALIDATED_SNAPSHOT', status: 503 });
+          nextRefs.set(ref, allEvidence.get(ref));
+        }
         if (nextRefs.size > limits.max_references || Buffer.byteLength(canonicalJson([...nextRefs.values()])) > limits.max_evidence_bytes) { truncated(edge, direction, 'EVIDENCE_LIMIT'); continue; }
         counts[direction]++; visited.add(other); nextRefs.forEach((value, key) => refs.set(key, value));
         const nodePath = [nodes.get(edge.from_id), nodes.get(edge.to_id)];

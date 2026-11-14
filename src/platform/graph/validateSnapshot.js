@@ -26,6 +26,7 @@ export function validateSnapshot(snapshot, registry) {
     if (!['hard', 'soft', 'unknown'].includes(edge.behavior?.classification) || !edge.source_refs?.length ||
         (edge.observed_at !== null && !Number.isFinite(Date.parse(edge.observed_at))) || !['observed', 'declared', 'inferred', 'validated', 'stale'].includes(edge.evidence_status)) throw new Error('Missing edge provenance');
     if (edge.source_refs.some(ref => !evidence.has(ref))) throw new Error('Unresolved evidence reference');
+    if ((edge.behavior.evidence_refs || []).some(ref => !evidence.has(ref))) throw new Error('Unresolved behavior evidence reference');
     if (edge.observed_at === null && (snapshot.validation_status !== 'validated_partial' || edge.evidence_status !== 'declared' ||
         edge.behavior.classification !== 'unknown' || edge.source_refs.some(ref => evidence.get(ref).status !== 'declared'))) throw new Error('Unknown declaration time cannot support validated behavior or complete coverage');
     if (edge.behavior.classification !== 'unknown') {
