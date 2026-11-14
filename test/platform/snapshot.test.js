@@ -82,6 +82,14 @@ test('registry version content changes and alias conflicts cannot silently resol
   assert.equal(resolveAlias(conflict, 'catalog_name', 'checkout'), null);
   await assert.rejects(store.publishSnapshot(conflict, snapshotFixture(conflict)), { code: 'SNAPSHOT_VERSION_CONFLICT' });
 });
+test('direction edge limits apply across all changed roots', () => {
+  const result = queryNeighborhood(snapshotFixture(), [service('checkout'), service('payment')], { limits: { max_edges_per_direction: 1 } });
+  assert.equal(result.downstream.length, 1);
+  assert.ok(result.upstream.length <= 1);
+  assert.equal(result.bounds.truncated, true);
+  assert.ok(result.bounds.truncation_reason.includes('FANOUT_LIMIT'));
+  assert.equal(result.bounds.unexplored_frontier[0].direction, 'downstream');
+});
 test('publisher preserves LKG after validation and durability failure', async () => {
   const registry = registryFixture(), store = new MemorySnapshotStore(), publisher = new SnapshotPublisher(store);
   const first = await publisher.publish(registry, async () => snapshotFixture(registry));
