@@ -11,6 +11,7 @@ export function queryNeighborhood(snapshot, serviceIds, options = {}) {
   const refs = new Map();
   const allEvidence = new Map(snapshot.evidence.map(e => [e.evidence_id, e]));
   const upstream = [], downstream = [], frontier = [];
+  const counts = { upstream: 0, downstream: 0 };
   const reasons = new Set();
   function truncated(edge, direction, reason) { reasons.add(reason); frontier.push({ edge_id: edge.edge_id, direction, from_id: edge.from_id, to_id: edge.to_id }); }
   const roots = [...new Set(serviceIds)].sort();
@@ -21,16 +22,18 @@ export function queryNeighborhood(snapshot, serviceIds, options = {}) {
   roots.slice(0, limits.max_nodes).forEach(id => visited.add(id));
   for (const root of roots.slice(0, limits.max_nodes)) {
     for (const direction of ['upstream', 'downstream']) {
-      let count = 0;
       for (const edge of snapshot.edges.filter(e => direction === 'upstream' ? e.to_id === root : e.from_id === root).sort((a, b) => a.edge_id.localeCompare(b.edge_id))) {
         const other = direction === 'upstream' ? edge.from_id : edge.to_id;
         if (clock() - start >= limits.max_ms) { truncated(edge, direction, 'TIME_LIMIT'); continue; }
-        if (count >= limits.max_edges_per_direction) { truncated(edge, direction, 'FANOUT_LIMIT'); continue; }
+        if (counts[direction] >= limits.max_edges_per_direction) { truncated(edge, direction, 'FANOUT_LIMIT'); continue; }
         if (!visited.has(other) && visited.size >= limits.max_nodes) { truncated(edge, direction, 'NODE_LIMIT'); continue; }
         const nextRefs = new Map(refs);
-        for (const ref of [...edge.source_refs, ...(edge.behavior.evidence_refs || [])]) nextRefs.set(ref, allEvidence.get(ref));
+        for (const ref of [...edge.source_refs, ...(edge.behavior.evidence_refs || [])]) {
+          if (!allEvidence.has(ref)) throw Object.assign(new Error('Snapshot has an unresolved evidence reference'), { code: 'NO_VALIDATED_SNAPSHOT', status: 503 });
+          nextRefs.set(ref, allEvidence.get(ref));
+        }
         if (nextRefs.size > limits.max_references || Buffer.byteLength(canonicalJson([...nextRefs.values()])) > limits.max_evidence_bytes) { truncated(edge, direction, 'EVIDENCE_LIMIT'); continue; }
-        count++; visited.add(other); nextRefs.forEach((value, key) => refs.set(key, value));
+        counts[direction]++; visited.add(other); nextRefs.forEach((value, key) => refs.set(key, value));
         const nodePath = [nodes.get(edge.from_id), nodes.get(edge.to_id)];
         const node = nodes.get(other);
         const row = { changed_service_id: root, service_id: other, nodes: nodePath, edges: [edge], relationship_type: edge.relationship_type,

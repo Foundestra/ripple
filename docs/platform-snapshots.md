@@ -24,7 +24,7 @@ Postgres triggers reject updates and deletes on immutable platform fact tables. 
 
 Queries return one-hop upstream and downstream paths with canonical nodes, edges, behavior, tier, owner, source references, and coverage. Empty output from this partial fixture does not mean known absence.
 
-Hard limits are depth 1, 250 returned nodes, 100 edges per direction per changed service, 2 seconds, 256 KiB retained evidence, and 100 source references. A query can lower these limits but cannot increase them. Reaching a limit sets `truncated`, records the reason, and exposes the unexplored frontier. Unknown freshness remains unknown.
+Hard limits are depth 1, 250 returned nodes, 100 edges per response direction across all changed services, 2 seconds, 256 KiB retained evidence, and 100 source references. A query can lower these limits but cannot increase them. Reaching a limit sets `truncated`, records the reason, and exposes the unexplored frontier. Unknown freshness remains unknown.
 
 ## Verification
 
