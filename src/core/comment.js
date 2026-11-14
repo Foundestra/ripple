@@ -12,8 +12,16 @@ export function renderComment(a) {
   const b = BADGE[a.gate.level];
   const out = [MARKER, `### ${b.icon} Ripple: ${b.label}`, '', `**${a.headline}**`, ''];
 
+  const evidence = a.dependency_evidence;
+  if (evidence) {
+    out.push('**Dependency evidence:** advisory, partial coverage. ' +
+      `${evidence.unknown_behavior_count} edges have unknown failure behavior; ${evidence.stale_edge_count} have stale observations.`,
+      evidence.mock ? 'Telemetry is simulated. Sample experiments do not validate production failure behavior.' : evidence.coverage_note, '');
+    if (evidence.analysis_status === 'incomplete') out.push('**Incomplete analysis:** dependency lookup failed. Do not treat this result as clearance to merge.', '');
+  }
+
   if (a.gate.level === 'low') {
-    out.push('No extra reviewers or checks needed. Specialist agents skipped.', '');
+    out.push(evidence ? 'No additional checks selected by the current risk rules. Dependency coverage remains partial; a human makes the merge decision.' : 'No extra reviewers or checks needed. Specialist agents skipped.', '');
     out.push(factorsBlock(a), footer(a));
     return out.join('\n');
   }

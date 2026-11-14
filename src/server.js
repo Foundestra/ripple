@@ -89,6 +89,7 @@ export async function startServer(overrides = {}) {
           captured_at: graphService.graph.capturedAt,
           attempts: graphService.attempts,
         },
+        dependency_evidence: graphService.graph.evidenceSummary(),
         experiments: graphService.experiments().map((e) => ({ flag: e.flag, origin: e.origin, environment: e.environment || null, recorded_at: e.recorded_at })),
         planning: planning.name,
         incidents: incidentSource.name,

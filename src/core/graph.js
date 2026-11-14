@@ -1,3 +1,4 @@
+import { dependencyEvidence, graphEvidenceSummary } from './dependencyEvidence.js';
 // Dependency graph with hard/soft edge classification and N-hop blast radius.
 //
 // Classification order (later wins):
@@ -10,10 +11,12 @@ const SOFT_PROTOCOLS = new Set(['kafka', 'messaging', 'redis', 'cache']);
 const SOFT_CALLEE_KINDS = new Set(['cache', 'queue']);
 
 export class DependencyGraph {
-  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null, mock = false }) {
+  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null, mock = false, environment = 'unknown', maxAgeSec = 3600, experimentMaxAgeSec = 604800, now = Date.now() }) {
     this.catalog = catalog;
     this.source = source;
     this.mock = mock;
+    this.environment = environment;
+    this.evidenceOptions = { now, maxAgeSec, experimentMaxAgeSec, environment };
     this.capturedAt = capturedAt;
     this.stale = stale;
     this.error = error;
@@ -23,11 +26,16 @@ export class DependencyGraph {
 
     for (const e of edges) this.#addEdge({ ...e, origin: e.origin || 'traces' });
     for (const m of catalog.manualEdges) {
-      if (!this.byKey.has(key(m.from, m.to))) {
-        this.#addEdge({ from: m.from, to: m.to, protocol: m.protocol || 'grpc', origin: 'manual', origin_reason: m.reason, last_seen: null });
+      const existing = this.byKey.get(key(m.from, m.to));
+      if (existing && m.dependency_types) {
+        existing.dependency_types = [...new Set([...(existing.dependency_types || ['runtime']), ...m.dependency_types])];
+      }
+      if (!existing) {
+        this.#addEdge({ from: m.from, to: m.to, protocol: m.protocol || 'grpc', origin: 'manual', origin_reason: m.reason, last_seen: null, dependency_types: m.dependency_types });
       }
     }
     this.#classify();
+    for (const edge of this.edges) Object.assign(edge, dependencyEvidence(edge, this, this.evidenceOptions));
   }
 
   #addEdge(e) {
@@ -37,9 +45,10 @@ export class DependencyGraph {
       protocol: e.protocol || 'grpc',
       calls_per_min: e.calls_per_min ?? null,
       error_rate: e.error_rate ?? null,
-      last_seen: e.last_seen ?? this.capturedAt,
+      last_seen: e.origin === 'manual' ? (e.last_seen ?? null) : (e.last_seen ?? this.capturedAt),
       origin: e.origin,
       origin_reason: e.origin_reason,
+      dependency_types: e.dependency_types,
     };
     this.edges.push(edge);
     this.byKey.set(key(edge.from, edge.to), edge);
@@ -65,7 +74,7 @@ export class DependencyGraph {
         if (!e) continue;
         e.kind = v.result;
         e.kind_source = 'experiment';
-        e.experiment = { flag: exp.flag, origin: exp.origin, environment: exp.environment || null, propagation: v.propagation ?? null, baseline_error: v.baseline_error, during_error: v.during_error };
+        e.experiment = { flag: exp.flag, origin: exp.origin, environment: exp.environment || null, recorded_at: exp.recorded_at || null, propagation: v.propagation ?? null, baseline_error: v.baseline_error, during_error: v.during_error };
         e.kind_reason =
           v.result === 'hard'
             ? `Verified by failure experiment \`${exp.flag}\`: ${v.evidence}`
@@ -131,7 +140,9 @@ export class DependencyGraph {
           owners: s.owners || [],
           hops: b.hops,
           path: [b.edges[0].from, ...b.edges.map((x) => x.to)],
-          edges: b.edges.map((x) => ({ from: x.from, to: x.to, kind: x.kind, kind_source: x.kind_source, kind_reason: x.kind_reason })),
+          edges: b.edges.map((x) => this.describeEdge(x)),
+          evidence_complete: b.edges.every(x => x.failure_behavior !== 'unknown' && x.freshness === 'fresh'),
+          potential_impact: b.edges.some(x => x.failure_behavior === 'unknown') ? 'unknown' : b.allHard ? 'may_break' : 'may_degrade',
           allHard: b.allHard,
           impact: b.allHard ? 'breaks' : 'degrades',
         };
@@ -139,8 +150,17 @@ export class DependencyGraph {
       .sort((a, b) => Number(b.allHard) - Number(a.allHard) || a.tier - b.tier || a.hops - b.hops || a.service.localeCompare(b.service));
   }
 
+  describeEdge(edge) {
+    const { from, to, kind, kind_source, kind_reason, dependency_types, failure_behavior, classification_basis, confidence, freshness, evidence } = edge;
+    return { from, to, kind, kind_source, kind_reason, dependency_types, failure_behavior, classification_basis, confidence, freshness, evidence };
+  }
+
+  evidenceSummary() { return graphEvidenceSummary(this); }
+
   toJSON() {
     return {
+      schema_version: 1,
+      evidence_summary: this.evidenceSummary(),
       source: this.source,
       mock: this.mock,
       captured_at: this.capturedAt,

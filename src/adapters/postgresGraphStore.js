@@ -108,7 +108,7 @@ export class PostgresGraphStore {
         const edges = r.edge_path.map((k) => {
           const [from, to] = k.split('->');
           const e = graph.edge(from, to);
-          return { from, to, kind: e.kind, kind_source: e.kind_source, kind_reason: e.kind_reason };
+          return graph.describeEdge(e);
         });
         const s = graph.catalog.get(r.service);
         return {
@@ -119,6 +119,8 @@ export class PostgresGraphStore {
           hops: r.hops,
           path: [edges[0].from, ...edges.map((x) => x.to)],
           edges,
+          evidence_complete: edges.every(e => e.failure_behavior !== 'unknown' && e.freshness === 'fresh'),
+          potential_impact: edges.some(e => e.failure_behavior === 'unknown') ? 'unknown' : r.all_hard ? 'may_break' : 'may_degrade',
           allHard: r.all_hard,
           impact: r.all_hard ? 'breaks' : 'degrades',
         };
