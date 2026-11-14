@@ -7,5 +7,11 @@
   "base": "main",
   "author": "nadia-discovery",
   "ci": { "state": "success", "summary": "5/5 checks passed" },
-  "demo": { "expected": "medium", "moment": "Frontend calls it but has a fallback, so Ripple warns instead of blocking." }
+  "demo": { "expected": "medium", "moment": "Frontend calls it but has a fallback, so Ripple warns instead of blocking." },
+  "platform": {
+    "repository_id": "repository://demo/opentelemetry-demo",
+    "commit_sha": "cc3db747a289104c3c82ef837c36093e8f731051",
+    "commit_identity": "synthetic_demo_identity",
+    "live_github_verified": false
+  }
 }

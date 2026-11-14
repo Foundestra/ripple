@@ -1,0 +1,277 @@
+{
+  "schema_version": "ripple.shadow-policy-cases.v1",
+  "scope": "demo",
+  "policy": {
+    "id": "policy://platform-shadow",
+    "version": "1.0.0",
+    "source_sha256": "ee727eb4a794dee37d5ecfb217bf1a79c6232a1bdd955629e3db5c0b0ab9c56e"
+  },
+  "source_sha256": "6f2783e96b5b3efcffee958e8724ed6a0b2293571547d4827d6dd5de776aa576",
+  "cases": [
+    {
+      "id": "pay-142-known-high-with-missing-controls",
+      "description": "Known HIGH triggers take precedence while missing evidence remains visible.",
+      "input": {
+        "analysis_status": "partial",
+        "direct_tiers": [
+          {
+            "value": 1,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [
+          "mandatory_contract_change"
+        ],
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "payment-checkout-contract",
+            "status": "missing"
+          },
+          {
+            "id": "human-review",
+            "status": "missing"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "HIGH",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "DIRECT_TIER_1",
+          "MANDATORY_CONTRACT_CHANGE"
+        ]
+      }
+    },
+    {
+      "id": "known-medium-tier-2",
+      "description": "A known direct Tier 2 service is MEDIUM even with otherwise complete evidence.",
+      "input": {
+        "analysis_status": "complete",
+        "direct_tiers": [
+          {
+            "value": 2,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [],
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "passed",
+            "authority": "demo_only"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "MEDIUM",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "DIRECT_TIER_2"
+        ]
+      }
+    },
+    {
+      "id": "unknown-tier",
+      "description": "An unresolved required tier cannot be LOW.",
+      "input": {
+        "analysis_status": "partial",
+        "direct_tiers": [
+          {
+            "value": null,
+            "authority": "unknown"
+          }
+        ],
+        "signals": [],
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "passed",
+            "authority": "demo_only"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "UNKNOWN",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "REQUIRED_TIER_UNRESOLVED"
+        ]
+      }
+    },
+    {
+      "id": "known-low-tier-3",
+      "description": "LOW requires only known controls, authoritative passing tests, complete fresh evidence, and no adverse signal.",
+      "input": {
+        "analysis_status": "complete",
+        "direct_tiers": [
+          {
+            "value": 3,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [],
+        "dependencies": {
+          "critical_hard_consumers": [],
+          "evidence_complete": true,
+          "fresh": true
+        },
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "passed",
+            "authority": "demo_only"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "LOW",
+        "outcome": "would_allow_bypass",
+        "eligibility": "eligible_for_bypass",
+        "reason_codes": [
+          "LOW_CRITERIA_SATISFIED"
+        ]
+      }
+    },
+    {
+      "id": "missing-required-control",
+      "description": "A missing required control cannot be LOW.",
+      "input": {
+        "analysis_status": "partial",
+        "direct_tiers": [
+          {
+            "value": 3,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [],
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "missing"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "UNKNOWN",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "REQUIRED_CONTROL_MISSING"
+        ]
+      }
+    },
+    {
+      "id": "stale-required-evidence",
+      "description": "Stale required evidence cannot be LOW.",
+      "input": {
+        "analysis_status": "partial",
+        "direct_tiers": [
+          {
+            "value": 3,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [],
+        "dependencies": {
+          "critical_hard_consumers": [],
+          "evidence_complete": true,
+          "fresh": false
+        },
+        "traversal": {
+          "truncated": false
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "passed",
+            "authority": "demo_only"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "UNKNOWN",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "REQUIRED_EVIDENCE_STALE"
+        ]
+      }
+    },
+    {
+      "id": "truncated-traversal",
+      "description": "An unexplored frontier cannot be LOW.",
+      "input": {
+        "analysis_status": "partial",
+        "direct_tiers": [
+          {
+            "value": 3,
+            "authority": "demo_only"
+          }
+        ],
+        "signals": [],
+        "traversal": {
+          "truncated": true,
+          "truncation_reason": "reverse_fanout_limit",
+          "unexplored_frontier": [
+            "service://astronomy-shop/frontend"
+          ]
+        },
+        "controls": [
+          {
+            "id": "required-tests",
+            "status": "passed",
+            "authority": "demo_only"
+          }
+        ]
+      },
+      "expected": {
+        "risk_classification": "UNKNOWN",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "TRAVERSAL_TRUNCATED"
+        ]
+      }
+    },
+    {
+      "id": "insufficient-commit-binding",
+      "description": "Missing commit identity produces insufficient evidence and cannot be eligible.",
+      "input": {
+        "analysis_status": "insufficient_evidence",
+        "commit_sha": null,
+        "direct_tiers": [],
+        "signals": [],
+        "traversal": {
+          "truncated": false
+        },
+        "controls": []
+      },
+      "expected": {
+        "risk_classification": "UNKNOWN",
+        "outcome": "would_lock",
+        "eligibility": "ineligible",
+        "reason_codes": [
+          "COMMIT_BINDING_UNRESOLVED"
+        ]
+      }
+    }
+  ]
+}
