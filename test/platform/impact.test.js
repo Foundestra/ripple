@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildAssessment } from '../../src/platform/impact/buildAssessment.js';
 import { MemoryAssessmentStore } from '../../src/platform/persistence/assessmentStore.js';
+import { validateContract } from '../../src/platform/contracts/validate.js';
 
 const payment='service://astronomy-shop/payment', checkout='service://astronomy-shop/checkout';
 const registry={registry_version:'registry://demo/astronomy-shop@1.0.0#sha256:'+'1'.repeat(64),source_sha256:'1'.repeat(64),
@@ -30,11 +31,12 @@ test('PAY-142 builds a version-bound conservative impact assessment', async () =
 test('earliest validity boundary is pinned and unknown or expired validity cannot produce LOW',async()=>{
   const at='2026-11-14T09:00:00.000Z',later='2026-11-14T11:00:00.000Z',early='2026-11-14T09:20:00.000Z';
   const lowRegistry={...registry,valid_until:later,services:registry.services.map(service=>({...service,tier:{...service.tier,value:3}}))};
-  const lowEvidence={...evidence,status:'observed',observed_at:'2026-11-14T08:30:00.000Z',valid_until:later};
+  const lowEvidence={...evidence,environment:'demo',scope:'demo',metadata:{},status:'observed',observed_at:'2026-11-14T08:30:00.000Z',valid_until:later};
   const lowEdge={...edge,evidence_status:'observed',observed_at:lowEvidence.observed_at,behavior:{...edge.behavior,classification:'soft'}};
-  const lowSnapshot={...snapshot,valid_until:later,validation_status:'validated_complete',source_versions:[{source:'seeded',version:'v1',observed_at:'2026-11-14T08:30:00.000Z',valid_until:later}],coverage:[{...snapshot.coverage[0],status:'real',freshness:'fresh',unknowns:[],valid_until:later}],nodes:snapshot.nodes.map(node=>({...node,tier:{...node.tier,value:3}})),edges:[lowEdge],evidence:[lowEvidence]};
+  const lowSnapshot={...snapshot,schema_version:'ripple.graph-snapshot.v1',environment:'demo',created_at:at,valid_until:later,validation_status:'validated_complete',source_versions:[{source:'seeded',version:'v1',observed_at:'2026-11-14T08:30:00.000Z',valid_until:later}],coverage:[{...snapshot.coverage[0],status:'real',freshness:'fresh',unknowns:[],valid_until:later}],nodes:snapshot.nodes.map(node=>({...node,tier:{...node.tier,value:3}})),edges:[lowEdge],evidence:[lowEvidence]};
   const lowPolicy={...policy,valid_until:later};
   const lowRequest={...request,evaluation_at:at,files:[{path:'src/payment/charge.js',status:'modified'}],signals:[],controls:[{id:'required-tests',status:'passed',authority:'demo_only'}]};
+  validateContract('graph-snapshot',lowSnapshot);
   const baseline=await buildAssessment({request:lowRequest,registry:lowRegistry,snapshot:lowSnapshot,policy:lowPolicy,store:new MemoryAssessmentStore(),clock:()=>new Date(at)});
   assert.equal(baseline.valid_until,'2026-11-14T10:00:00.000Z');
   const noPath=await buildAssessment({request:lowRequest,registry:lowRegistry,snapshot:{...lowSnapshot,edges:[],evidence:[]},policy:lowPolicy,store:new MemoryAssessmentStore(),clock:()=>new Date(at)});
@@ -43,10 +45,12 @@ test('earliest validity boundary is pinned and unknown or expired validity canno
     [ {...lowRegistry,valid_until:early},lowSnapshot,lowPolicy,early ],
     [ lowRegistry,{...lowSnapshot,valid_until:early},lowPolicy,early ],
     [ lowRegistry,lowSnapshot,{...lowPolicy,valid_until:early},early ],
+    [ lowRegistry,{...lowSnapshot,coverage:lowSnapshot.coverage.map(row=>({...row,valid_until:early}))},lowPolicy,early ],
+    [ lowRegistry,{...lowSnapshot,source_versions:lowSnapshot.source_versions.map(row=>({...row,valid_until:early}))},lowPolicy,early ],
     [ lowRegistry,{...lowSnapshot,evidence:[{...lowEvidence,valid_until:early}]},lowPolicy,early ],
     [ lowRegistry,{...lowSnapshot,evidence:[(({valid_until,...rest})=>rest)(lowEvidence)]},lowPolicy,'2026-11-14T09:30:00.000Z' ],
   ];
-  for(const [r,s,p,expected] of variants){const result=await buildAssessment({request:lowRequest,registry:r,snapshot:s,policy:p,store:new MemoryAssessmentStore(),clock:()=>new Date(at)}); assert.equal(result.valid_until,expected);}
+  for(const [r,s,p,expected] of variants){validateContract('graph-snapshot',s);const result=await buildAssessment({request:lowRequest,registry:r,snapshot:s,policy:p,store:new MemoryAssessmentStore(),clock:()=>new Date(at)}); assert.equal(result.valid_until,expected);}
   for(const [r,expected] of [[{...lowRegistry,valid_until:'2026-11-14T08:59:00.000Z'},'2026-11-14T08:59:00.000Z'],[(({valid_until,...rest})=>rest)(lowRegistry),at]]){
     const result=await buildAssessment({request:lowRequest,registry:r,snapshot:lowSnapshot,policy:lowPolicy,store:new MemoryAssessmentStore(),clock:()=>new Date(at)});
     assert.equal(result.analysis_status,'partial'); assert.notEqual(result.risk_classification,'LOW'); assert.equal(result.valid_until,expected);
