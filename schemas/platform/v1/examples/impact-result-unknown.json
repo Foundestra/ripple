@@ -1,0 +1,151 @@
+{
+  "schema_version": "ripple.impact-result.v1",
+  "work_item_id": "jira://demo/PAY-142",
+  "repository": "repository://demo/opentelemetry-demo",
+  "pr_number": 103,
+  "commit_sha": "0123456789abcdef0123456789abcdef01234567",
+  "evaluation_at": "2026-11-14T09:00:00.000Z",
+  "request_context_sha256": "ce9ce239190fe3e86bda0ae7d9dd5f4c81d0cdbd90e4425f4d84c4037d7571c6",
+  "versions": {
+    "registry_version": "registry://demo/astronomy-shop@1.0.0#sha256:39f8d4bf707dc3bae56f98219ef99a7cc44d451242b2b403c2cf89280d1bd48c",
+    "registry_sha256": "39f8d4bf707dc3bae56f98219ef99a7cc44d451242b2b403c2cf89280d1bd48c",
+    "snapshot_id": "snapshot://sha256:249a2dd0fa5002ff79ecfd0faa970b23b200d07f91140a0070286654308dab5a",
+    "graph_version": "sha256:249a2dd0fa5002ff79ecfd0faa970b23b200d07f91140a0070286654308dab5a",
+    "policy_version": "policy://platform-shadow@1.0.0#sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "policy_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "snapshot_sha256": "249a2dd0fa5002ff79ecfd0faa970b23b200d07f91140a0070286654308dab5a"
+  },
+  "bounds": {
+    "depth": 1,
+    "max_nodes": 250,
+    "max_edges_per_direction": 100,
+    "max_ms": 2000,
+    "max_evidence_bytes": 262144,
+    "max_references": 100,
+    "returned_nodes": 1,
+    "elapsed_ms": 12,
+    "retained_evidence_bytes": 512,
+    "truncated": false,
+    "truncation_reason": [],
+    "unexplored_frontier": []
+  },
+  "summary": {
+    "direct_tiers": [
+      {
+        "value": 3,
+        "source": "demo_manifest",
+        "authority": "demo_only"
+      }
+    ],
+    "highest_known_tier": 3,
+    "critical_hard_consumers": [],
+    "hard_paths": 0,
+    "soft_paths": 0,
+    "unknown_paths": 1,
+    "required_evidence_gaps": [
+      "DEPENDENCY_BEHAVIOR_UNKNOWN"
+    ]
+  },
+  "unknowns": [
+    "DEPENDENCY_BEHAVIOR_UNKNOWN"
+  ],
+  "analysis_status": "partial",
+  "risk_classification": "UNKNOWN",
+  "shadow_decision": {
+    "schema_version": "ripple.shadow-decision.v1",
+    "risk_classification": "UNKNOWN",
+    "analysis_status": "partial",
+    "outcome": "would_lock",
+    "eligibility": "ineligible",
+    "authorization": {
+      "status": "not_evaluated",
+      "authorization_id": null
+    },
+    "reason_codes": [
+      "DEPENDENCY_BEHAVIOR_UNKNOWN"
+    ],
+    "required_controls": [
+      "unit-tests"
+    ],
+    "satisfied_controls": [
+      "unit-tests"
+    ],
+    "missing_controls": [],
+    "policy_version": "policy://platform-shadow@1.0.0#sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "evidence_refs": [],
+    "evaluation_at": "2026-11-14T09:00:00.000Z",
+    "valid_until": "2026-11-14T10:00:00.000Z",
+    "reevaluation": {
+      "required_after": "2026-11-14T10:00:00.000Z",
+      "reasons": [
+        "EVIDENCE_FRESHNESS_BOUNDARY"
+      ]
+    },
+    "human_action": "Resolve dependency behavior and evidence coverage; no bypass eligibility was issued.",
+    "decision_id": "decision://sha256:874df4622190b68d6a6fc6ae2310d90617d34796303751a9a2e990d0b70bd616"
+  },
+  "legacy_risk": {
+    "authority": "none",
+    "use": "display_only",
+    "level": null,
+    "score": null,
+    "factors": []
+  },
+  "human_action": "Resolve dependency behavior and evidence coverage; no bypass eligibility was issued.",
+  "assessment_id": "assessment://sha256:80c1288c01a3a23d4d582eb069d517bca5452df3d07a85d1182cb38405f351c7",
+  "replay_key": "8489d8590b0e820334a9f138340810d410132d7aee94caddf5580419f27f20ce",
+  "resolution": [
+    {
+      "path": "src/email/template.js",
+      "repository_id": "repository://demo/opentelemetry-demo",
+      "component_ids": [
+        "component://demo/opentelemetry-demo/email"
+      ],
+      "service_ids": [
+        "service://astronomy-shop/email"
+      ],
+      "resolution": "exact_path_mapping",
+      "registry_version": "registry://demo/astronomy-shop@1.0.0#sha256:39f8d4bf707dc3bae56f98219ef99a7cc44d451242b2b403c2cf89280d1bd48c",
+      "confidence": "authoritative_demo",
+      "fallback_used": false,
+      "warnings": []
+    }
+  ],
+  "direct_services": [
+    {
+      "service_id": "service://astronomy-shop/email",
+      "tier": {
+        "value": 3,
+        "source": "demo_manifest",
+        "authority": "demo_only"
+      },
+      "owners": [
+        {
+          "team": "@astro-shop/messaging",
+          "source": "demo_manifest",
+          "authority": "demo_only"
+        }
+      ]
+    }
+  ],
+  "upstream": [],
+  "downstream": [],
+  "coverage": [
+    {
+      "adapter": "demo_graph",
+      "signal": "dependency",
+      "status": "mock",
+      "observed_from": "2026-11-14T08:55:00.000Z",
+      "observed_until": "2026-11-14T08:55:00.000Z",
+      "freshness": "fresh",
+      "limit": 2500,
+      "truncated": false,
+      "errors": [],
+      "unknowns": [
+        "PRODUCTION_COVERAGE_UNAVAILABLE"
+      ]
+    }
+  ],
+  "created_at": "2026-11-14T09:00:00.000Z",
+  "valid_until": "2026-11-14T10:00:00.000Z"
+}

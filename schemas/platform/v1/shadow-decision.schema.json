@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundestra.dev/schemas/platform/v1/shadow-decision.schema.json",
+  "title": "Ripple Platform V1 informational shadow decision",
+  "type": "object",
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "properties": {
+        "risk_classification": { "enum": ["HIGH", "MEDIUM", "UNKNOWN"] },
+        "outcome": { "const": "would_lock" },
+        "eligibility": { "const": "ineligible" }
+      }
+    },
+    {
+      "properties": {
+        "risk_classification": { "const": "LOW" },
+        "analysis_status": { "const": "complete" },
+        "outcome": { "const": "would_allow_bypass" },
+        "eligibility": { "const": "eligible_for_bypass" },
+        "missing_controls": { "maxItems": 0 }
+      }
+    }
+  ],
+  "required": ["schema_version", "decision_id", "risk_classification", "analysis_status", "outcome", "eligibility", "authorization", "reason_codes", "required_controls", "satisfied_controls", "missing_controls", "policy_version", "evidence_refs", "evaluation_at", "valid_until", "reevaluation", "human_action"],
+  "properties": {
+    "schema_version": { "const": "ripple.shadow-decision.v1" },
+    "decision_id": { "type": "string", "pattern": "^decision://sha256:[a-f0-9]{64}$" },
+    "risk_classification": { "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] },
+    "analysis_status": { "enum": ["complete", "partial", "insufficient_evidence", "failed"] },
+    "outcome": { "enum": ["would_lock", "would_allow_bypass"] },
+    "eligibility": { "enum": ["ineligible", "eligible_for_bypass"] },
+    "authorization": { "$ref": "#/$defs/authorization" },
+    "reason_codes": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 128 } },
+    "required_controls": { "$ref": "#/$defs/controlList" },
+    "satisfied_controls": { "$ref": "#/$defs/controlList" },
+    "missing_controls": { "$ref": "#/$defs/controlList" },
+    "policy_version": { "type": "string", "pattern": "^policy://[a-z0-9][a-z0-9._-]*@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)#sha256:[a-f0-9]{64}$" },
+    "evidence_refs": { "type": "array", "maxItems": 100, "items": { "type": "string", "pattern": "^(fact|evidence)://[^?#]+$", "maxLength": 512 } },
+    "evaluation_at": { "type": "string", "format": "date-time" },
+    "valid_until": { "type": "string", "format": "date-time" },
+    "reevaluation": { "$ref": "#/$defs/reevaluation" },
+    "human_action": { "type": "string", "minLength": 1, "maxLength": 1024 }
+  },
+  "$defs": {
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "authorization_id"],
+      "properties": {
+        "status": { "const": "not_evaluated" },
+        "authorization_id": { "type": "null" }
+      }
+    },
+    "controlList": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 256 } },
+    "reevaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_after", "reasons"],
+      "properties": {
+        "required_after": { "type": "string", "format": "date-time" },
+        "reasons": { "type": "array", "minItems": 1, "maxItems": 100, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 128 } }
+      }
+    }
+  }
+}

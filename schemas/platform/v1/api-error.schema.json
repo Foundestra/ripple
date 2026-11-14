@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://foundestra.dev/schemas/platform/v1/api-error.schema.json",
+  "title": "Ripple Platform V1 stable API error",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "error"],
+  "properties": {
+    "schema_version": { "const": "ripple.api-error.v1" },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable", "details"],
+      "properties": {
+        "code": { "enum": ["REQUEST_TOO_LARGE", "FILE_LIMIT_EXCEEDED", "PATH_TOO_LONG", "HISTORY_LIMIT_EXCEEDED", "INVALID_REPOSITORY", "INVALID_COMMIT_SHA", "INVALID_EVALUATION_AT", "HEAD_SUPERSEDED", "SNAPSHOT_VERSION_CONFLICT", "NO_VALIDATED_SNAPSHOT", "ASSESSMENT_TIME_LIMIT"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "retryable": { "type": "boolean" },
+        "details": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/detail" } }
+      }
+    }
+  },
+  "$defs": {
+    "detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "reason"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "limit": { "type": "integer", "minimum": 0, "maximum": 1048576 }
+      }
+    }
+  }
+}
