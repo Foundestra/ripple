@@ -60,6 +60,14 @@ test('snapshot validity boundaries bind content identity', () => {
   const second = snapshotFixture(registry, { valid_until: '2026-11-14T09:20:00Z' });
   assert.notEqual(first.snapshot_id, second.snapshot_id);
   assert.equal(validateSnapshot(first, registry).valid_until, '2026-11-14T09:10:00Z');
+  const bounded = snapshotFixture(registry, {
+    coverage: first.coverage.map(row => ({ ...row, valid_until: '2026-11-14T09:15:00Z' })),
+    evidence: first.evidence.map(row => ({ ...row, valid_until: '2026-11-14T09:20:00Z' })),
+    source_versions: first.source_versions.map(row => ({ ...row, valid_until: '2026-11-14T09:25:00Z' })),
+  });
+  validateSnapshot(bounded, registry);
+  assert.equal(bounded.coverage[0].valid_until, '2026-11-14T09:15:00Z');
+  assert.equal(bounded.evidence[0].valid_until, '2026-11-14T09:20:00Z');
 });
 test('one-hop traversal returns canonical upstream and downstream paths', () => {
   const result = queryNeighborhood(snapshotFixture(), [service('payment')]);

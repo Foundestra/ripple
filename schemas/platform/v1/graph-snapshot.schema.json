@@ -31,8 +31,6 @@
       "required": ["source", "version", "observed_at"],
       "properties": {
         "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
-        "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
-        "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
         "source": { "type": "string", "minLength": 1, "maxLength": 128 },
         "version": { "type": "string", "minLength": 1, "maxLength": 512 },
         "observed_at": { "type": "string", "format": "date-time" }
@@ -43,6 +41,7 @@
       "additionalProperties": false,
       "required": ["adapter", "signal", "status", "observed_from", "observed_until", "freshness", "limit", "truncated", "errors", "unknowns"],
       "properties": {
+        "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
         "adapter": { "type": "string", "minLength": 1, "maxLength": 128 },
         "signal": { "type": "string", "minLength": 1, "maxLength": 128 },
         "status": { "enum": ["real", "mock", "pending", "unavailable"] },
@@ -141,6 +140,7 @@
       ],
       "required": ["evidence_id", "source_system", "source_reference", "status", "observed_at", "environment", "scope", "metadata"],
       "properties": {
+        "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
         "evidence_id": { "$ref": "#/$defs/evidenceRef" },
         "source_system": { "type": "string", "minLength": 1, "maxLength": 128 },
         "source_reference": { "type": "string", "minLength": 1, "maxLength": 512 },
