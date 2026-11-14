@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "registry_id", "scope", "authority", "version", "source_sha256", "source_references", "repositories", "services", "components", "shared_contract_files", "path_classifications", "unresolved_alias_types"],
   "properties": {
+    "valid_until": { "type": "string", "format": "date-time", "maxLength": 64 },
     "schema_version": { "const": "ripple.registry.v1" },
     "registry_id": { "type": "string", "pattern": "^registry://[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$" },
     "scope": { "enum": ["demo", "operational"] },
