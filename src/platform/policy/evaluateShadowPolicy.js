@@ -11,6 +11,9 @@ const SIGNAL_CODES = Object.freeze({
 });
 
 export function evaluateShadowPolicy(envelope, policy) {
+  if (!/^assessment:\/\/sha256:[a-f0-9]{64}$/.test(envelope.assessment_id || '') ||
+      !/^[a-f0-9]{64}$/.test(envelope.replay_key || '') ||
+      envelope.assessment_id !== `assessment://sha256:${envelope.replay_key}`) throw Object.assign(new Error('A matching assessment and replay identity is required for a shadow decision'), { code: 'INVALID_ASSESSMENT_IDENTITY' });
   const reasons = new Set();
   const tiers = envelope.direct_tiers || [];
   const signals = new Set(envelope.signals || []);
@@ -57,8 +60,9 @@ export function evaluateShadowPolicy(envelope, policy) {
   const eligible = risk === 'LOW' && envelope.analysis_status === 'complete' && !compliance && missing.length === 0;
   const evaluation = new Date(envelope.evaluation_at);
   const ttlMs = Number(envelope.ttl_ms || 60 * 60 * 1000);
-  const candidates = [new Date(evaluation.getTime() + ttlMs).toISOString(), ...(envelope.evidence_expiries || [])].sort();
-  const valid_until = candidates[0];
+  const candidates = [evaluation.getTime()+ttlMs,...(envelope.evidence_expiries||[]).map(value=>new Date(value).getTime())];
+  if(candidates.some(value=>!Number.isFinite(value))) throw new Error('Invalid evidence expiry');
+  const valid_until = new Date(Math.min(...candidates)).toISOString();
   const core = {
     schema_version: 'ripple.shadow-decision.v1', risk_classification: risk,
     analysis_status: envelope.analysis_status, outcome: eligible ? 'would_allow_bypass' : 'would_lock',
@@ -71,5 +75,7 @@ export function evaluateShadowPolicy(envelope, policy) {
     human_action: eligible ? 'A human may review bypass eligibility; no deploy authorization was issued.' :
       'Review the risk and missing controls; no deploy authorization was issued.',
   };
-  return frozenCopy({ decision_id: `decision://sha256:${contentHash(core)}`, ...core });
+  const decision_id = `decision://sha256:${contentHash({ assessment_id: envelope.assessment_id,
+    replay_key: envelope.replay_key, decision: core })}`;
+  return frozenCopy({ decision_id, ...core });
 }

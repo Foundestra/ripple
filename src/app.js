@@ -1,4 +1,4 @@
-import { loadConfig } from './config.js';
+import { loadConfig, validatePlatformConfig } from './config.js';
 import { loadCatalog } from './adapters/catalog.js';
 import { GraphService } from './core/graphService.js';
 import { createPlanningAdapter } from './adapters/planning.js';
@@ -13,6 +13,7 @@ export async function createRipple(overrides = {}) {
   const config = { ...loadConfig(), ...overrides };
   if (overrides.graph) config.graph = { ...loadConfig().graph, ...overrides.graph };
   if (overrides.platform) config.platform = { ...loadConfig().platform, ...overrides.platform };
+  validatePlatformConfig(config.platform);
   const catalog = loadCatalog(config.dataDir);
   const graphService = await new GraphService(config, catalog, { log: overrides.log || console }).init();
   const planning = createPlanningAdapter(config);

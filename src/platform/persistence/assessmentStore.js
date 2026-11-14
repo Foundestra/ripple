@@ -12,6 +12,7 @@ export class MemoryAssessmentStore {
 
   async saveAssessment(record) {
     const head = this.#heads.get(`${record.repository_id}#${record.pr_number}`);
+    if (head?.ambiguous) throw Object.assign(new Error('Authoritative head is ambiguous'),{code:'HEAD_AMBIGUOUS',status:409});
     if (head && head.commit_sha !== record.commit_sha) throw Object.assign(new Error('Commit is not the accepted head'), { code: 'HEAD_SUPERSEDED', status: 409 });
     const duplicate = this.#replays.get(record.replay_key);
     if (duplicate) return { record: frozenCopy(this.#assessments.get(duplicate)), replayed: true };
@@ -48,14 +49,24 @@ export class MemoryAssessmentStore {
     const deliveryKey = `${key}#${delivery_id}`;
     if (this.#deliveries.has(deliveryKey)) return frozenCopy({ ...this.#deliveries.get(deliveryKey), disposition: 'duplicate' });
     const current = this.#heads.get(key);
+    const ambiguous=!!current && source_observed_at===current.source_observed_at && commit_sha!==current.commit_sha;
     const event = frozenCopy({ event_id: randomUUID(), repository_id, pr_number, commit_sha, delivery_id,
-      source_observed_at, accepted_at: new Date().toISOString(), disposition: !current || source_observed_at > current.source_observed_at ? 'accepted' : 'rejected_out_of_order' });
+      source_observed_at, accepted_at: new Date().toISOString(), disposition: ambiguous?'quarantined_ambiguous':!current || source_observed_at > current.source_observed_at ? 'accepted' : 'rejected_out_of_order' });
+    if (event.disposition==='quarantined_ambiguous') {
+      const oldAssessment=this.#active.get(key);
+      this.#heads.set(key,frozenCopy({...current,ambiguous:true,candidate_shas:[...new Set([...(current.candidate_shas||[current.commit_sha]),commit_sha])].sort()}));
+      this.#active.delete(key);
+      if(oldAssessment) this.#events.push(frozenCopy({event_id:randomUUID(),assessment_id:oldAssessment,event_type:'INVALIDATED_BY_AMBIGUOUS_HEAD',head_sha:null,details:{head_event_id:event.event_id}}));
+    }
     if (event.disposition === 'accepted') {
       const oldAssessment = this.#active.get(key);
-      this.#heads.set(key, event);
-      this.#active.delete(key);
-      if (oldAssessment) this.#events.push(frozenCopy({ event_id: randomUUID(), assessment_id: oldAssessment,
-        event_type: 'INVALIDATED_BY_NEW_HEAD', head_sha: commit_sha, details: { head_event_id: event.event_id } }));
+      this.#heads.set(key, frozenCopy({...event,ambiguous:false,candidate_shas:[commit_sha]}));
+      const active = oldAssessment ? this.#assessments.get(oldAssessment) : null;
+      if (active && active.commit_sha !== commit_sha) {
+        this.#active.delete(key);
+        this.#events.push(frozenCopy({ event_id: randomUUID(), assessment_id: oldAssessment,
+          event_type: 'INVALIDATED_BY_NEW_HEAD', head_sha: commit_sha, details: { head_event_id: event.event_id } }));
+      }
     }
     this.#deliveries.set(deliveryKey, event);
     return event;

@@ -27,8 +27,10 @@ Persisted reads do not refresh evidence:
 
 `commit_sha` selects exact history. `limit` defaults to 20 and cannot exceed 100. Expiry and changed-head invalidation are derived at read time; immutable assessment and decision rows are not edited.
 
+V1 uses a fixed one-hour freshness TTL for retained observations that have an `observed_at` but no explicit `valid_until`. The decision boundary is the earliest applicable registry, snapshot, policy, coverage, source-version, or retained-evidence expiry. Missing required validity is bounded at the pinned `evaluation_at`; it never opens a new eligibility window.
+
 ## Limits and rollback
 
-The API enforces a 256 KiB request cap, 100 files, 1,024-byte paths, one-hop traversal, 250 nodes, 100 edges per direction per changed service, two seconds, 256 KiB evidence, 100 references/history rows, and a 1 MiB result. Configuration may lower but not raise hard maxima.
+The API enforces a 256 KiB request cap, 100 files, 1,024-byte paths, one-hop traversal, 250 nodes, 100 edges per response direction across all changed services, two seconds, 256 KiB evidence, 100 references/history rows, and a 1 MiB result. Configuration may lower but not raise hard maxima.
 
 Rollback sets `RIPPLE_PLATFORM_MODE=off`. Additive immutable audit tables remain in place; only documented active projections are rebuildable. This demo is synthetic contract evidence, not production validation or deploy authorization.

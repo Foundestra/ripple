@@ -12,5 +12,12 @@ test('reads derive expiry without mutating stored result and bound history', asy
   assert.equal(read.current_eligibility, 'expired'); assert.equal(read.reevaluation_required, true);
   assert.equal((await store.getAssessment(value.assessment_id)).result.current_eligibility, undefined);
   assert.equal((await readAssessmentHistory(store, { work_item_id: value.work_item_id }, { limit: 1 })).count, 1);
+  await store.saveAssessment(row(2,'2026-11-14T11:00:00.000Z'));
+  const getHead=store.getCurrentHead.bind(store), getActive=store.getActiveAssessment.bind(store);
+  let headReads=0,activeReads=0;
+  store.getCurrentHead=async(...args)=>{headReads++; return getHead(...args);};
+  store.getActiveAssessment=async(...args)=>{activeReads++; return getActive(...args);};
+  assert.equal((await readAssessmentHistory(store,{work_item_id:value.work_item_id},{limit:2,now:'2026-11-14T09:30:00.000Z'})).count,2);
+  assert.deepEqual({headReads,activeReads},{headReads:1,activeReads:1},'history loads state once per PR, not once per row');
   await assert.rejects(() => readAssessmentHistory(store, {}, { limit: 101 }), { code: 'HISTORY_LIMIT_EXCEEDED' });
 });

@@ -12,7 +12,7 @@
       "additionalProperties": false,
       "required": ["code", "message", "retryable", "details"],
       "properties": {
-        "code": { "enum": ["REQUEST_TOO_LARGE", "FILE_LIMIT_EXCEEDED", "PATH_TOO_LONG", "HISTORY_LIMIT_EXCEEDED", "INVALID_REPOSITORY", "INVALID_COMMIT_SHA", "INVALID_EVALUATION_AT", "HEAD_SUPERSEDED", "SNAPSHOT_VERSION_CONFLICT", "NO_VALIDATED_SNAPSHOT", "ASSESSMENT_TIME_LIMIT"] },
+        "code": { "enum": ["REQUEST_TOO_LARGE", "FILE_LIMIT_EXCEEDED", "PATH_TOO_LONG", "HISTORY_LIMIT_EXCEEDED", "INVALID_REPOSITORY", "INVALID_COMMIT_SHA", "INVALID_EVALUATION_AT", "HEAD_SUPERSEDED", "HEAD_AMBIGUOUS", "SNAPSHOT_VERSION_CONFLICT", "NO_VALIDATED_SNAPSHOT", "ASSESSMENT_TIME_LIMIT", "INVALID_REQUEST", "INVALID_CONTRACT", "ACCESS_DENIED", "NOT_FOUND", "RESULT_TOO_LARGE", "INTERNAL_ERROR", "INVALID_LIMIT"] },
         "message": { "type": "string", "minLength": 1, "maxLength": 512 },
         "retryable": { "type": "boolean" },
         "details": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/detail" } }
