@@ -104,3 +104,46 @@ test('catalog types extend an observed edge instead of disappearing', () => {
   const g = graph({ catalog: { manual_edges: [{ from: 'caller', to: 'target', dependency_types: ['contract'], reason: 'Consumes API' }] } });
   assert.deepEqual(g.edge('caller', 'target').dependency_types, ['runtime', 'contract']);
 });
+
+test('read-time assessment ages without a successful graph refresh', () => {
+  let clock = now;
+  const g = graph({ now: () => clock, maxAgeSec: 120, experimentMaxAgeSec: 120, experiments: [experiment()] });
+  assert.equal(g.edge('caller', 'target').confidence, 'high');
+  clock += 180_000;
+  assert.equal(g.evidenceSummary().stale_edge_count, 1);
+  assert.equal(g.toJSON().edges[0].failure_behavior, 'unknown');
+  assert.equal(g.edge('caller', 'target').confidence, 'unknown');
+  assert.equal(g.upstream('target')[0].potential_impact, 'unknown');
+});
+
+test('serialized paths retain catalog reasons alongside runtime evidence', () => {
+  const g = graph({ catalog: { manual_edges: [{ from: 'caller', to: 'target', dependency_types: ['contract'], reason: 'Consumes ChargeResponse' }] } });
+  const evidence = g.upstream('target')[0].edges[0].evidence;
+  assert.equal(evidence[0].source, 'prometheus');
+  assert.deepEqual(evidence[1].dependency_types, ['contract']);
+  assert.equal(evidence[1].source, 'catalog');
+  assert.equal(evidence[1].reason, 'Consumes ChargeResponse');
+});
+
+test('unknown experiment origin and mock environment never validate behavior', () => {
+  for (const opts of [{ experiments: [experiment({ origin: undefined })] }, { environment: 'mock', experiments: [experiment({ environment: 'mock' })] }]) {
+    assert.equal(graph(opts).edge('caller', 'target').failure_behavior, 'unknown');
+  }
+});
+
+test('invalid freshness limits cannot validate experiments', () => {
+  for (const limit of [NaN, Infinity, -1, 0]) {
+    const e = graph({ experimentMaxAgeSec: limit, experiments: [experiment()] }).edge('caller', 'target');
+    assert.equal(e.failure_behavior, 'unknown');
+  }
+});
+
+test('review comments keep sample-backed impact rows explicitly unknown', async () => {
+  const app = await createRipple({ graph: { source: 'seeded', refreshSec: 0 }, llm: { provider: 'none' } });
+  try {
+    const a = await app.orchestrator.analyze(loadFixturePr(app.config.fixturesDir, 'pr3'));
+    assert.match(a.comment, /\| \*\*unknown\*\* \|/);
+    assert.doesNotMatch(a.comment, /\| \*\*breaks\*\* \|/);
+    assert.doesNotMatch(a.comment, /hard edge \(failure propagates\)/);
+  } finally { await app.graphService.stop(); }
+});

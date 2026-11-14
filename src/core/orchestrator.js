@@ -91,7 +91,7 @@ export class Orchestrator {
         agents: agentTrace,
       },
       dependency_evidence: {
-        ...graphServiceSummary(this.graphService.graph),
+        ...this.graphService.graph.evidenceSummary(),
         analysis_status: codeSig.error ? 'incomplete' : 'advisory',
         lookup_error: codeSig.error || null,
       },
@@ -138,5 +138,3 @@ function queryText(pr, change) {
     change.migrations.length ? 'migration schema' : '',
   ].join('\n');
 }
-
-function graphServiceSummary(graph) { return graph.evidenceSummary(); }

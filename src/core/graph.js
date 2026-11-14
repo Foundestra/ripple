@@ -1,4 +1,4 @@
-import { dependencyEvidence, graphEvidenceSummary } from './dependencyEvidence.js';
+import { dependencyEvidence, graphEvidenceSummary, pathEvidence } from './dependencyEvidence.js';
 // Dependency graph with hard/soft edge classification and N-hop blast radius.
 //
 // Classification order (later wins):
@@ -11,12 +11,13 @@ const SOFT_PROTOCOLS = new Set(['kafka', 'messaging', 'redis', 'cache']);
 const SOFT_CALLEE_KINDS = new Set(['cache', 'queue']);
 
 export class DependencyGraph {
-  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null, mock = false, environment = 'unknown', maxAgeSec = 3600, experimentMaxAgeSec = 604800, now = Date.now() }) {
+  constructor({ edges, catalog, experiments = [], source = 'unknown', capturedAt = null, stale = false, error = null, mock = false, environment = 'unknown', maxAgeSec = 3600, experimentMaxAgeSec = 604800, now = Date.now }) {
     this.catalog = catalog;
     this.source = source;
     this.mock = mock;
     this.environment = environment;
-    this.evidenceOptions = { now, maxAgeSec, experimentMaxAgeSec, environment };
+    this.evidenceOptions = { maxAgeSec, experimentMaxAgeSec, environment };
+    this.clock = typeof now === 'function' ? now : () => now;
     this.capturedAt = capturedAt;
     this.stale = stale;
     this.error = error;
@@ -27,6 +28,7 @@ export class DependencyGraph {
     for (const e of edges) this.#addEdge({ ...e, origin: e.origin || 'traces' });
     for (const m of catalog.manualEdges) {
       const existing = this.byKey.get(key(m.from, m.to));
+      if (existing) existing.catalog_declarations.push(m);
       if (existing && m.dependency_types) {
         existing.dependency_types = [...new Set([...(existing.dependency_types || ['runtime']), ...m.dependency_types])];
       }
@@ -35,7 +37,7 @@ export class DependencyGraph {
       }
     }
     this.#classify();
-    for (const edge of this.edges) Object.assign(edge, dependencyEvidence(edge, this, this.evidenceOptions));
+    this.refreshEvidence();
   }
 
   #addEdge(e) {
@@ -49,6 +51,7 @@ export class DependencyGraph {
       origin: e.origin,
       origin_reason: e.origin_reason,
       dependency_types: e.dependency_types,
+      catalog_declarations: [],
     };
     this.edges.push(edge);
     this.byKey.set(key(edge.from, edge.to), edge);
@@ -77,7 +80,7 @@ export class DependencyGraph {
         e.experiment = { flag: exp.flag, origin: exp.origin, environment: exp.environment || null, recorded_at: exp.recorded_at || null, propagation: v.propagation ?? null, baseline_error: v.baseline_error, during_error: v.during_error };
         e.kind_reason =
           v.result === 'hard'
-            ? `Verified by failure experiment \`${exp.flag}\`: ${v.evidence}`
+            ? `Routing classification from failure experiment \`${exp.flag}\`: ${v.evidence}`
             : `Failure experiment \`${exp.flag}\` did not propagate: ${v.evidence}`;
       }
     }
@@ -91,7 +94,9 @@ export class DependencyGraph {
   }
 
   edge(from, to) {
-    return this.byKey.get(key(from, to)) ?? null;
+    const edge = this.byKey.get(key(from, to));
+    if (edge) Object.assign(edge, dependencyEvidence(edge, this, { ...this.evidenceOptions, now: this.clock() }));
+    return edge ?? null;
   }
 
   nodes() {
@@ -114,6 +119,7 @@ export class DependencyGraph {
   // the most severe path: an all-hard chain beats a chain with a soft edge, then fewer hops.
   // Hard + tier 1 = "breaks"; any soft edge on the way = "degrades".
   upstream(service, maxHops = 3) {
+    this.refreshEvidence();
     const best = new Map();
     const walk = (node, chain, visited) => {
       if (chain.length >= maxHops) return;
@@ -141,8 +147,7 @@ export class DependencyGraph {
           hops: b.hops,
           path: [b.edges[0].from, ...b.edges.map((x) => x.to)],
           edges: b.edges.map((x) => this.describeEdge(x)),
-          evidence_complete: b.edges.every(x => x.failure_behavior !== 'unknown' && x.freshness === 'fresh'),
-          potential_impact: b.edges.some(x => x.failure_behavior === 'unknown') ? 'unknown' : b.allHard ? 'may_break' : 'may_degrade',
+          ...pathEvidence(b.edges, b.allHard),
           allHard: b.allHard,
           impact: b.allHard ? 'breaks' : 'degrades',
         };
@@ -150,12 +155,21 @@ export class DependencyGraph {
       .sort((a, b) => Number(b.allHard) - Number(a.allHard) || a.tier - b.tier || a.hops - b.hops || a.service.localeCompare(b.service));
   }
 
+  refreshEvidence() {
+    const options = { ...this.evidenceOptions, now: this.clock() };
+    for (const edge of this.edges) Object.assign(edge, dependencyEvidence(edge, this, options));
+  }
+
   describeEdge(edge) {
+    Object.assign(edge, dependencyEvidence(edge, this, { ...this.evidenceOptions, now: this.clock() }));
     const { from, to, kind, kind_source, kind_reason, dependency_types, failure_behavior, classification_basis, confidence, freshness, evidence } = edge;
     return { from, to, kind, kind_source, kind_reason, dependency_types, failure_behavior, classification_basis, confidence, freshness, evidence };
   }
 
-  evidenceSummary() { return graphEvidenceSummary(this); }
+  evidenceSummary() {
+    this.refreshEvidence();
+    return graphEvidenceSummary(this);
+  }
 
   toJSON() {
     return {

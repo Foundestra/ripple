@@ -3,7 +3,7 @@ export const DEPENDENCY_TYPES = ['runtime', 'shared_code', 'contract', 'data', '
 
 function freshness(at, now, maxAgeSec, stale) {
   const stamp = Date.parse(at);
-  if (!Number.isFinite(stamp) || stamp > now) return 'unknown';
+  if (!Number.isFinite(stamp) || stamp > now || !Number.isFinite(maxAgeSec) || maxAgeSec <= 0) return 'unknown';
   return stale || now - stamp > maxAgeSec * 1000 ? 'stale' : 'fresh';
 }
 
@@ -17,9 +17,15 @@ export function dependencyEvidence(edge, graph, { now, maxAgeSec, experimentMaxA
     status: edge.origin === 'manual' || graph.source === 'seeded' ? 'inferred' : 'observed',
     mock: graph.mock, environment,
     observed_at: edge.last_seen,
+    reason: edge.origin === 'manual' ? edge.origin_reason || null : null,
     freshness: freshness(edge.last_seen, now, maxAgeSec, graph.stale),
   };
   const evidence = [observation];
+  for (const declaration of edge.catalog_declarations || []) {
+    evidence.push({ source: 'catalog', status: 'inferred', reason: declaration.reason || null,
+      dependency_types: declaration.dependency_types || ['runtime'], environment,
+      observed_at: null, freshness: 'unknown' });
+  }
   let failureBehavior = 'unknown';
   let confidence = 'unknown';
   if (observation.status === 'observed' && !observation.mock && observation.freshness === 'fresh') confidence = 'medium';
@@ -29,10 +35,11 @@ export function dependencyEvidence(edge, graph, { now, maxAgeSec, experimentMaxA
       source: 'experiment', reference: exp.flag, environment: exp.environment,
       observed_at: exp.recorded_at || null,
       freshness: freshness(exp.recorded_at, now, experimentMaxAgeSec, false),
-      status: exp.origin === 'sample' || graph.mock ? 'sample' : 'recorded',
+      status: graph.mock || exp.environment === 'mock' || exp.origin === 'sample' ? 'sample' : exp.origin === 'recorded' ? 'recorded' : 'unknown',
     };
     const applicable = item.status === 'recorded' && item.freshness === 'fresh'
-      && environment !== 'unknown' && exp.environment === environment;
+      && !['unknown', 'mock', ''].includes(environment) && exp.environment === environment
+      && ['hard', 'soft'].includes(edge.kind);
     item.validates_failure_behavior = applicable;
     evidence.push(item);
     if (applicable) {
@@ -65,5 +72,13 @@ export function graphEvidenceSummary(graph) {
     mock: graph.mock,
     coverage: 'partial',
     coverage_note: 'No observed edge does not prove that no dependency exists. Static and contract discovery are not yet implemented.',
+  };
+}
+
+export function pathEvidence(edges, allHard) {
+  const complete = edges.every(e => e.failure_behavior !== 'unknown' && e.freshness === 'fresh');
+  return {
+    evidence_complete: complete,
+    potential_impact: !complete ? 'unknown' : allHard ? 'may_break' : 'may_degrade',
   };
 }

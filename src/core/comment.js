@@ -36,18 +36,18 @@ export function renderComment(a) {
     out.push(`#### 💥 Blast radius`);
     out.push(
       `${blast.rows.length + blast.more} service${blast.rows.length + blast.more === 1 ? '' : 's'} upstream of ${changed} within ${blast.maxHops} hops` +
-        (hardCount ? `, **${hardCount} via hard edges**.` : ', all via soft edges.'),
+        (hardCount ? `, **${hardCount} via hard routing hypotheses**.` : ', all via soft routing hypotheses.'),
       '',
     );
     out.push('| Service | Tier | Dependency chain | Impact |', '|---|---|---|---|');
     for (const row of blast.rows) {
-      out.push(`| \`${row.service}\` | ${row.tier} | ${chain(row)} | ${row.allHard ? '**breaks**' : 'degrades'} |`);
+      out.push(`| \`${row.service}\` | ${row.tier} | ${chain(row)} | ${row.potential_impact === 'unknown' ? '**unknown**' : row.potential_impact === 'may_break' ? 'may break' : row.potential_impact === 'may_degrade' ? 'may degrade' : row.allHard ? '**breaks**' : 'degrades'} |`);
     }
     if (blast.more) out.push(`| _+${blast.more} more_ | | | |`);
-    out.push('', '<sub>⇒ hard edge (failure propagates) · ⇢ soft edge (caller degrades gracefully)</sub>');
+    out.push('', '<sub>⇒ hard routing hypothesis · ⇢ soft routing hypothesis · unknown means failure behavior is not validated</sub>');
     const why = uniqueEdges(blast.rows).filter((e) => e.kind_source !== 'protocol');
     if (why.length) {
-      out.push('', '<details><summary>Why these edges are hard or soft</summary>', '');
+      out.push('', '<details><summary>Sources behind hard or soft routing hypotheses</summary>', '');
       for (const e of why) out.push(`- \`${e.from}\` → \`${e.to}\` **${e.kind}**: ${e.kind_reason}`);
       out.push('', '</details>');
     }
