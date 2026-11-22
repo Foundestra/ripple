@@ -151,3 +151,29 @@ function isStringLiteralOnly(file) {
   }
   return changed > 0;
 }
+
+// Static cold-path factor. Input: changed symbols (from changedSymbols.buildChangedSymbols),
+// static edges (from staticImports.analyzeStatic), runtime edges, and the static incomplete flag.
+// +1 when at least one non-deduped static importer depends on a changed service, +1 more when
+// there are 3 or more distinct importers. Capped at STATIC_FACTOR_MAX. Static edges that duplicate
+// a runtime hard edge add nothing, because that exposure is already scored. Incomplete analysis adds 0.
+export const STATIC_FACTOR_MAX = 2;
+
+export function staticSymbolFactor({ symbols = [], staticEdges = [], runtimeEdges = [], incomplete = false, serviceOf }) {
+  if (incomplete) {
+    return { points: 0, incomplete: true, dependents: [], reason: 'Static analysis incomplete (parse failures above 10%); no static points awarded' };
+  }
+  const changed = new Set(symbols.map((s) => serviceOf(s.path)).filter(Boolean));
+  if (!changed.size) return { points: 0, incomplete: false, dependents: [], reason: null };
+  const runtimeHard = new Set(runtimeEdges.filter((e) => e.kind === 'hard').map((e) => `${e.from}->${e.to}`));
+  const deps = staticEdges.filter((e) => changed.has(e.to) && !changed.has(e.from) && !runtimeHard.has(`${e.from}->${e.to}`));
+  if (!deps.length) return { points: 0, incomplete: false, dependents: [], reason: null };
+  const dependents = [...new Set(deps.map((e) => e.from))].sort();
+  const points = Math.min(STATIC_FACTOR_MAX, dependents.length >= 3 ? 2 : 1);
+  return {
+    points,
+    incomplete: false,
+    dependents,
+    reason: `Changed symbols are imported statically by ${dependents.map((d) => `\`${d}\``).join(', ')} (not in runtime hard edges)`,
+  };
+}
