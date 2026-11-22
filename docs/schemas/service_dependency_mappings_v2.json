@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ServiceDependencyMappingV2",
+  "version": "2.0",
+  "type": "object",
+  "required": ["schema_version", "mappings"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "2.0" },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "caller",
+          "callee",
+          "metadata"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "caller": {
+            "type": "object",
+            "required": ["service_id", "method_symbol"],
+            "properties": {
+              "service_id": { "type": "string" },
+              "method_symbol": { "type": "string" },
+              "method_template": { "type": "string" },
+              "file": { "type": "string" }
+            }
+          },
+          "callee": {
+            "type": "object",
+            "required": ["service_id", "route_id", "handler_symbol"],
+            "properties": {
+              "service_id": { "type": "string" },
+              "route_id": { "type": "string" },
+              "handler_symbol": { "type": "string" },
+              "method_template": { "type": "string" },
+              "file": { "type": "string" }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "required": ["protocol", "edge_classification"],
+            "properties": {
+              "protocol": { "type": "string", "enum": ["http", "grpc", "graphql", "kafka"] },
+              "http_method": { "type": "string" },
+              "edge_classification": { "type": "string", "enum": ["hard", "soft"] },
+              "p99_latency_ms": { "type": "number" },
+              "invocation_rpm": { "type": "integer" },
+              "trace_correlation": {
+                "type": "object",
+                "properties": {
+                  "otel_http_route": { "type": "string" },
+                  "otel_code_function": { "type": "string" },
+                  "otel_code_namespace": { "type": "string" },
+                  "span_kind": { "type": "string" }
+                }
+              }
+            }
+          },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

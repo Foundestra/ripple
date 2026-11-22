@@ -1,0 +1,17 @@
+{
+  "event": "coderabbit.review.completed",
+  "pr_number": 42,
+  "repo": "Foundestra/ripple",
+  "head_sha": "9f3c1b8",
+  "findings": [
+    {
+      "id": "cr_find_81723",
+      "symbol_id": "java:src/main/java/com/astronomy/payment/PaymentValidator.java#validateCard(CardInfo)",
+      "category": "breaking_change",
+      "severity": "CRITICAL",
+      "title": "Unchecked NullPointer on optional CVV field",
+      "impact_type": "contract_break",
+      "suggested_fix": "Add Optional.ofNullable guard before calling .trim()"
+    }
+  ]
+}
