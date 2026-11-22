@@ -1,0 +1,267 @@
+{
+  "schema_version": "ripple.registry.v1",
+  "registry_id": "registry://demo/astronomy-shop",
+  "scope": "demo",
+  "version": "1.0.0",
+  "source_sha256": "39f8d4bf707dc3bae56f98219ef99a7cc44d451242b2b403c2cf89280d1bd48c",
+  "repositories": [
+    {
+      "id": "repository://demo/opentelemetry-demo",
+      "aliases": [
+        {
+          "type": "github",
+          "value": "demo/opentelemetry-demo",
+          "status": "declared",
+          "canonical_id": "repository://demo/opentelemetry-demo"
+        }
+      ],
+      "fallback": {
+        "behavior": "unresolved",
+        "service_ids": []
+      },
+      "scope": "demo"
+    }
+  ],
+  "services": [
+    {
+      "id": "service://astronomy-shop/checkout",
+      "lifecycle": "active",
+      "aliases": [
+        {
+          "type": "catalog_name",
+          "value": "checkout",
+          "status": "declared"
+        }
+      ],
+      "owners": [
+        {
+          "team": "@astro-shop/checkout",
+          "source": "demo_manifest",
+          "authority": "demo_only"
+        }
+      ],
+      "tier": {
+        "value": 1,
+        "source": "demo_manifest",
+        "authority": "demo_only"
+      },
+      "kind": "service",
+      "description": "Orchestrates order placement",
+      "contacts": [
+        "devi-checkout"
+      ]
+    },
+    {
+      "id": "service://astronomy-shop/payment",
+      "lifecycle": "active",
+      "aliases": [
+        {
+          "type": "catalog_name",
+          "value": "payment",
+          "status": "declared"
+        },
+        {
+          "type": "otel_service_name",
+          "value": "payment",
+          "status": "unresolved"
+        }
+      ],
+      "owners": [
+        {
+          "team": "@astro-shop/payments",
+          "source": "demo_manifest",
+          "authority": "demo_only"
+        }
+      ],
+      "tier": {
+        "value": 1,
+        "source": "demo_manifest",
+        "authority": "demo_only"
+      },
+      "kind": "service",
+      "description": "Charges payment methods",
+      "contacts": [
+        "priya-payments"
+      ]
+    },
+    {
+      "id": "service://astronomy-shop/email",
+      "lifecycle": "active",
+      "aliases": [
+        {
+          "type": "catalog_name",
+          "value": "email",
+          "status": "declared"
+        }
+      ],
+      "owners": [
+        {
+          "team": "@astro-shop/messaging",
+          "source": "demo_manifest",
+          "authority": "demo_only"
+        }
+      ],
+      "tier": {
+        "value": 3,
+        "source": "demo_manifest",
+        "authority": "demo_only"
+      },
+      "kind": "service",
+      "description": "Sends order confirmation messages",
+      "contacts": [
+        "kwame-fulfil"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "component://demo/opentelemetry-demo/payment",
+      "repository_id": "repository://demo/opentelemetry-demo",
+      "service_ids": [
+        "service://astronomy-shop/payment"
+      ],
+      "path_rules": [
+        {
+          "prefix": "src/payment/",
+          "precedence": 100,
+          "classification": "source"
+        }
+      ],
+      "contract_symbols": [
+        "PaymentService",
+        "ChargeRequest",
+        "ChargeResponse",
+        "CreditCardInfo"
+      ],
+      "classification": "service_source"
+    },
+    {
+      "id": "component://demo/opentelemetry-demo/email",
+      "repository_id": "repository://demo/opentelemetry-demo",
+      "service_ids": [
+        "service://astronomy-shop/email"
+      ],
+      "path_rules": [
+        {
+          "prefix": "src/email/",
+          "precedence": 100,
+          "classification": "source"
+        }
+      ],
+      "contract_symbols": [],
+      "classification": "service_source"
+    },
+    {
+      "id": "component://demo/opentelemetry-demo/shared-contract",
+      "repository_id": "repository://demo/opentelemetry-demo",
+      "service_ids": [
+        "service://astronomy-shop/checkout",
+        "service://astronomy-shop/payment",
+        "service://astronomy-shop/email"
+      ],
+      "path_rules": [
+        {
+          "prefix": "pb/demo.proto",
+          "precedence": 200,
+          "classification": "shared"
+        }
+      ],
+      "contract_symbols": [
+        "CheckoutService",
+        "PaymentService",
+        "ChargeRequest",
+        "ChargeResponse",
+        "EmailService"
+      ],
+      "classification": "shared_contract",
+      "symbol_mappings": [
+        {
+          "service_id": "service://astronomy-shop/checkout",
+          "symbols": [
+            "CheckoutService"
+          ],
+          "status": "declared",
+          "source": "data/catalog.yaml"
+        },
+        {
+          "service_id": "service://astronomy-shop/payment",
+          "symbols": [
+            "PaymentService",
+            "ChargeRequest",
+            "ChargeResponse"
+          ],
+          "status": "declared",
+          "source": "data/catalog.yaml"
+        },
+        {
+          "service_id": "service://astronomy-shop/email",
+          "symbols": [
+            "EmailService"
+          ],
+          "status": "declared",
+          "source": "data/catalog.yaml"
+        }
+      ]
+    }
+  ],
+  "authority": "demo_only",
+  "source_references": [
+    {
+      "path": "data/catalog.yaml",
+      "status": "declared_demo"
+    },
+    {
+      "path": "data/graph-snapshot.json",
+      "status": "seeded_mock"
+    }
+  ],
+  "shared_contract_files": [
+    "pb/demo.proto"
+  ],
+  "path_classifications": {
+    "generated": [
+      {
+        "pattern": "genproto/",
+        "match": "contains_or_prefix"
+      }
+    ],
+    "documentation": [
+      {
+        "pattern": "README.md",
+        "match": "basename"
+      },
+      {
+        "pattern": "docs/",
+        "match": "prefix"
+      }
+    ],
+    "shared_contract": [
+      {
+        "pattern": "pb/demo.proto",
+        "match": "exact"
+      }
+    ]
+  },
+  "unresolved_alias_types": [
+    {
+      "type": "kubernetes_workload",
+      "status": "unresolved",
+      "reason": "No Kubernetes identity fixture is available."
+    },
+    {
+      "type": "datadog_service",
+      "status": "unresolved",
+      "reason": "No Datadog adapter or fixture is available."
+    },
+    {
+      "type": "pagerduty_service",
+      "status": "unresolved",
+      "reason": "Incident data is seeded and has no PagerDuty service identity."
+    },
+    {
+      "type": "deployment_unit",
+      "status": "unresolved",
+      "reason": "No deployment identity fixture is available."
+    }
+  ]
+}

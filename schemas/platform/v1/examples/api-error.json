@@ -1,0 +1,15 @@
+{
+  "schema_version": "ripple.api-error.v1",
+  "error": {
+    "code": "FILE_LIMIT_EXCEEDED",
+    "message": "Changed files exceed the hard maximum.",
+    "retryable": false,
+    "details": [
+      {
+        "field": "files",
+        "reason": "At most 100 changed files are accepted.",
+        "limit": 100
+      }
+    ]
+  }
+}

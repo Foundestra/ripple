@@ -1,0 +1,37 @@
+{
+  "schema_version": "ripple.shadow-decision.v1",
+  "risk_classification": "HIGH",
+  "analysis_status": "partial",
+  "outcome": "would_lock",
+  "eligibility": "ineligible",
+  "authorization": {
+    "status": "not_evaluated",
+    "authorization_id": null
+  },
+  "reason_codes": [
+    "DIRECT_TIER_1"
+  ],
+  "required_controls": [
+    "payment-checkout-contract",
+    "human-review"
+  ],
+  "satisfied_controls": [],
+  "missing_controls": [
+    "payment-checkout-contract",
+    "human-review"
+  ],
+  "policy_version": "policy://platform-shadow@1.0.0#sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "evidence_refs": [
+    "evidence://demo/checkout-payment-contract"
+  ],
+  "evaluation_at": "2026-11-14T09:00:00.000Z",
+  "valid_until": "2026-11-14T10:00:00.000Z",
+  "reevaluation": {
+    "required_after": "2026-11-14T10:00:00.000Z",
+    "reasons": [
+      "EVIDENCE_FRESHNESS_BOUNDARY"
+    ]
+  },
+  "human_action": "Review the breaking contract change and missing contract control; no deploy authorization was issued.",
+  "decision_id": "decision://sha256:e53d24ebef89b8d2420d969be8c4013cb71d317d938bef06c0e2184ef391cdf9"
+}
